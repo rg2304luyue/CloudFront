@@ -1,0 +1,30 @@
+# ======== Dependencies ========
+node_modules/
+
+# ======== Build ========
+dist/
+
+# ======== IDE ========
+### IntelliJ IDEA ###
+.idea/
+*.iml
+
+### VS Code ###
+.vscode/
+
+# ======== OS ========
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ======== Environment ========
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# ======== Log ========
+*.log
+npm-debug.log*
