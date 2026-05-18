@@ -4,19 +4,19 @@
 
 ## 技术栈
 
-| 层级 | 技术 | 版本 |
-|------|------|------|
-| 框架 | Vue | 3.5 |
-| 构建 | Vite | 6.x |
-| UI 组件库 | Element Plus | 2.9 |
-| 路由 | Vue Router | 4.5 |
-| 状态管理 | Pinia | 2.3 |
-| HTTP 请求 | Axios | 1.7 |
-| 图标 | @element-plus/icons-vue | 2.3 |
+|层级|技术|版本|
+|---|---|---|
+|框架|Vue|3.5|
+|构建|Vite|6.x|
+|UI 组件库|Element Plus|2.9|
+|路由|Vue Router|4.5|
+|状态管理|Pinia|2.3|
+|HTTP 请求|Axios|1.7|
+|图标|@element-plus/icons-vue|2.3|
 
 ## 项目结构
 
-```
+```text
 CloudFront/
 ├── index.html                      # 入口 HTML
 ├── package.json                    # 依赖声明
@@ -31,7 +31,7 @@ CloudFront/
     │   ├── product.js              #   商品：CRUD/分类
     │   ├── cart.js                 #   购物车：增删改查/勾选
     │   ├── order.js                #   订单：创建/查询/取消
-    │   └── payment.js             #   支付：查询
+    │   └── payment.js              #   支付：查询
     │
     ├── utils/                      # 工具函数
     │   ├── request.js              #   Axios 封装：拦截器、错误处理
@@ -42,12 +42,15 @@ CloudFront/
     │   └── cart.js                 #   购物车状态：列表/总数/总价
     │
     ├── router/
-    │   └── index.js                # 路由配置 + 登录守卫 + 404
+    │   └── index.js                # 路由配置 + 按需登录守卫
     │
     ├── layout/
-    │   └── MainLayout.vue          # 主布局（Header + 内容 + Footer）
+    │   └── MainLayout.vue          # 主布局：顶栏 + 侧边栏 + 内容 + 底栏
     │
     ├── components/                 # 通用组件
+    │   ├── AppHeader.vue           #   公共页头（Logo + 头像/登录入口）
+    │   ├── AppSidebar.vue          #   公共侧边导航栏（可折叠）
+    │   ├── AppFooter.vue           #   公共页脚
     │   ├── EmptyState.vue          #   空数据组件
     │   └── LoadingState.vue        #   加载中组件
     │
@@ -71,31 +74,55 @@ CloudFront/
     │       ├── UserInfo.vue        #   个人中心
     │       └── Address.vue         #   收货地址（CRUD + 默认）
     │
-    └── assets/
-        └── global.css              # 全局样式
+    ├── assets/
+    │   ├── global.css              #   全局样式
+    │   └── images/                 #   图片资源目录
+    │
+    └── data/                       # 静态数据 / Mock 数据目录
 ```
 
 ## 页面路由
 
-| 路径 | 页面 | 说明 |
-|------|------|------|
-| `/home` | 首页 | Banner + 热门商品 |
-| `/login` | 登录 | 无需登录 |
-| `/register` | 注册 | 无需登录 |
-| `/product/list` | 商品列表 | 搜索、分类筛选、分页 |
-| `/product/:id` | 商品详情 | 加购、立即购买 |
-| `/cart` | 购物车 | 勾选、改数量、结算 |
-| `/order/list` | 我的订单 | 取消订单 |
-| `/order/:id` | 订单详情 | 订单信息 |
-| `/user/info` | 个人中心 | 编辑信息 |
-| `/user/address` | 收货地址 | CRUD |
-| `/403` | 禁止访问 | 无权限时显示 |
-| `/500` | 服务错误 | 服务器异常时显示 |
-| `/*` | 404 | 未匹配路由 |
+|路径|页面|权限|说明|
+|---|---|---|---|
+|`/home`|首页|公开|Banner + 热门商品|
+|`/product/list`|商品列表|公开|搜索、分类筛选、分页|
+|`/product/:id`|商品详情|公开|加购、立即购买|
+|`/login`|登录|公开|独立全屏页面|
+|`/register`|注册|公开|独立全屏页面|
+|`/cart`|购物车|需登录|勾选、改数量、结算|
+|`/order/list`|我的订单|需登录|取消订单|
+|`/order/:id`|订单详情|需登录|订单信息|
+|`/user/info`|个人中心|需登录|编辑信息|
+|`/user/address`|收货地址|需登录|CRUD|
+|`/403`|禁止访问|公开|无权限时显示|
+|`/500`|服务错误|公开|服务器异常时显示|
+|`/*`|404|公开|未匹配路由|
+
+> 路由守卫按 `meta.requireAuth` 标记进行登录校验，公开页面可直接访问无需登录。
+
+## 布局结构
+
+```text
+┌──────────────────────────────────────┐
+│  AppHeader（Logo + 头像/登录入口）    │
+├────────┬─────────────────────────────┤
+│AppSidebar│                          │
+│  可折叠  │     <router-view>        │
+│  垂直菜单 │     各页面自主控制布局    │
+├────────┴─────────────────────────────┤
+│  AppFooter                          │
+└──────────────────────────────────────┘
+```
+
+进入网站直接展示商城主页，无需登录。右上角提供头像入口：
+
+- **未登录**：显示用户图标 + "点击登录"，点击跳转登录页
+- **已登录**：显示头像 + 用户名，下拉菜单可进入个人中心、收货地址或退出
 
 ## 架构分层
 
-```
+```text
 Views（页面）
   │ 使用 stores 获取状态，调用 api 发送请求
   ▼
@@ -153,12 +180,12 @@ npm run build
 
 ## 与后端的对应关系
 
-| 前端页面 | 调用的后端服务 | 接口 |
-|---------|-------------|------|
-| 登录/注册 | cloud-auth | POST /auth/login, /auth/register |
-| 首页/商品列表/详情 | cloud-product | GET /product/list, /product/detail/:id |
-| 个人中心 | cloud-user | GET /user/info, PUT /user/info |
-| 收货地址 | cloud-user | /user/address/* |
-| 购物车 | cloud-cart | /cart/* |
-| 订单 | cloud-order | /order/* |
-| 支付查询 | cloud-payment | GET /payment/:orderNo |
+|前端页面|调用的后端服务|接口|
+|---|---|---|
+|登录/注册|cloud-auth|POST /auth/login, /auth/register|
+|首页/商品列表/详情|cloud-product|GET /product/list, /product/detail/:id|
+|个人中心|cloud-user|GET /user/info, PUT /user/info|
+|收货地址|cloud-user|/user/address/*|
+|购物车|cloud-cart|/cart/*|
+|订单|cloud-order|/order/*|
+|支付查询|cloud-payment|GET /payment/:orderNo|
