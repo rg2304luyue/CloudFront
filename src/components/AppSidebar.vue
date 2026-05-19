@@ -17,7 +17,7 @@
       <el-menu-item index="/cart">
         <el-icon><ShoppingCart /></el-icon>
         <span>购物车</span>
-        <el-badge v-if="cartStore.totalCount > 0" :value="cartStore.totalCount > 99 ? '99+' : cartStore.totalCount" class="cart-badge" />
+        <span v-show="!collapsed && cartStore.totalCount > 0" class="cart-badge">{{ cartStore.totalCount > 99 ? '99+' : cartStore.totalCount }}</span>
       </el-menu-item>
       <el-menu-item index="/order/list">
         <el-icon><Document /></el-icon>
@@ -118,7 +118,19 @@ const activeMenu = computed(() => {
   color: var(--primary);
 }
 
-.cart-badge { margin-left: auto; }
+.cart-badge {
+  background: #f56c6c;
+  color: #fff;
+  font-size: 12px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 9px;
+  padding: 0 5px;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
 
 .sidebar-footer {
   padding: 8px;
