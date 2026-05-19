@@ -51,3 +51,11 @@ export function getPendingProducts(params) {
 export function reviewProduct(id, approved) {
   return request.put(`/product/admin/review/${id}`, null, { params: { approved } })
 }
+
+export function uploadImage(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/product/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

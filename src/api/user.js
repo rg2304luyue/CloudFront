@@ -40,6 +40,14 @@ export function applySeller() {
   return request.post('/user/apply-seller')
 }
 
+export function uploadAvatar(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/user/avatar/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export function getApplications() {
   return request.get('/user/admin/applications')
 }

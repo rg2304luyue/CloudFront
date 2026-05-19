@@ -24,15 +24,29 @@
       <el-form-item label="描述">
         <el-input v-model="form.description" type="textarea" :rows="3" />
       </el-form-item>
-      <el-form-item label="主图URL">
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <el-input v-model="form.mainImage" placeholder="图片直链，如 https://xxx.jpg" />
-          <el-image v-if="form.mainImage" :src="form.mainImage" fit="contain"
-            style="width:200px;height:150px;border:1px solid var(--border);border-radius:6px"
-            @error="imgError = true"
-          >
-            <template #error><div class="img-error">图片加载失败</div></template>
-          </el-image>
+      <el-form-item label="主图" prop="mainImage">
+        <div class="upload-area">
+          <template v-if="!form.mainImage">
+            <input ref="fileInput" type="file" accept="image/*" @change="handleFileChange" class="file-input" />
+            <div class="upload-trigger" @click="$refs.fileInput.click()">
+              <el-icon :size="32" color="#9ca3af"><Plus /></el-icon>
+              <span v-if="!uploading">点击上传图片</span>
+              <span v-else>上传中...</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="upload-preview">
+              <el-image :src="form.mainImage" fit="contain"
+                style="width:200px;height:150px;border:1px solid var(--border);border-radius:6px"
+                @error="imgError = true">
+                <template #error><div class="img-error">图片加载失败</div></template>
+              </el-image>
+              <div class="preview-actions">
+                <el-input v-model="form.mainImage" placeholder="图片URL" size="small" style="width:200px" />
+                <el-button size="small" type="danger" plain @click="clearImage">删除</el-button>
+              </div>
+            </div>
+          </template>
         </div>
       </el-form-item>
       <el-form-item v-if="userStore.isAdmin" label="状态">
@@ -52,14 +66,15 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCategoryTree, getProductDetail, addProduct, updateProduct } from '@/api/product'
+import { getCategoryTree, getProductDetail, addProduct, updateProduct, uploadImage } from '@/api/product'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
 const isEdit = computed(() => !!route.params.id)
-const formRef = ref(null); const submitting = ref(false); const categoryTree = ref([]); const imgError = ref(false)
+const formRef = ref(null); const submitting = ref(false); const categoryTree = ref([]); const imgError = ref(false); const uploading = ref(false); const fileInput = ref(null)
 
 const form = reactive({
   name: '', categoryId: null, price: 0, stock: 0,
@@ -70,7 +85,33 @@ const rules = {
   name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-  stock: [{ required: true, message: '请输入库存', trigger: 'blur' }]
+  stock: [{ required: true, message: '请输入库存', trigger: 'blur' }],
+  mainImage: [{ required: true, message: '请上传商品主图', trigger: 'change' }]
+}
+
+async function handleFileChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  imgError.value = false
+  uploading.value = true
+  try {
+    const res = await uploadImage(file)
+    if (res.data) {
+      form.mainImage = res.data
+      ElMessage.success('上传成功')
+    }
+  } catch {
+    ElMessage.error('上传失败')
+  } finally {
+    uploading.value = false
+    // reset file input so re-selecting the same file triggers change
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+function clearImage() {
+  form.mainImage = ''
+  imgError.value = false
 }
 
 onMounted(async () => {
@@ -101,4 +142,25 @@ async function handleSubmit() {
 
 <style scoped>
 .page-head { margin-bottom: 20px; }
+
+.upload-area { width: 100%; }
+.file-input { display: none; }
+.upload-trigger {
+  width: 200px; height: 150px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; cursor: pointer;
+  transition: border-color .15s;
+  color: var(--text-muted); font-size: 13px;
+}
+.upload-trigger:hover { border-color: var(--primary); color: var(--primary); }
+.upload-preview { display: flex; flex-direction: column; gap: 8px; }
+.preview-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.img-error {
+  width: 200px; height: 150px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f3f4f6; color: var(--text-muted); font-size: 13px;
+}
 </style>

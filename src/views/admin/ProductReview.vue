@@ -31,14 +31,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { getPendingProducts, reviewProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 
 const products = ref([]); const loading = ref(true)
 const page = ref(1); const size = ref(20); const total = ref(0)
+let timer = null
 
-onMounted(() => fetchData())
+onMounted(() => { fetchData(); timer = setInterval(fetchDataSilent, 30000) })
+onBeforeUnmount(() => clearInterval(timer))
 
 async function fetchData() {
   loading.value = true
@@ -47,6 +49,14 @@ async function fetchData() {
     products.value = res.data || []
     total.value = (res.data || []).length
   } finally { loading.value = false }
+}
+
+async function fetchDataSilent() {
+  try {
+    const res = await getPendingProducts({ page: page.value, size: size.value })
+    products.value = res.data || []
+    total.value = (res.data || []).length
+  } catch {}
 }
 
 async function handleReview(product, approved) {

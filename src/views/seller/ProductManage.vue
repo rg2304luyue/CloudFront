@@ -43,12 +43,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { getMyProducts, deleteProduct } from '@/api/product'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const products = ref([]); const loading = ref(true)
 const page = ref(1); const size = ref(20); const total = ref(0)
+let timer = null
 
 async function fetchProducts() {
   loading.value = true
@@ -57,6 +58,14 @@ async function fetchProducts() {
     products.value = res.data || []
     total.value = Math.max((res.data || []).length, page.value * size.value + 1)
   } finally { loading.value = false }
+}
+
+async function fetchProductsSilent() {
+  try {
+    const res = await getMyProducts({ page: page.value, size: size.value })
+    products.value = res.data || []
+    total.value = Math.max((res.data || []).length, page.value * size.value + 1)
+  } catch {}
 }
 
 async function handleDelete(row) {
@@ -68,7 +77,8 @@ async function handleDelete(row) {
   } catch { /* cancelled */ }
 }
 
-onMounted(fetchProducts)
+onMounted(() => { fetchProducts(); timer = setInterval(fetchProductsSilent, 30000) })
+onBeforeUnmount(() => clearInterval(timer))
 </script>
 
 <style scoped>

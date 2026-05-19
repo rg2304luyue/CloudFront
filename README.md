@@ -47,6 +47,7 @@ CloudFront/
     │   ├── AppHeader.vue                #   顶栏：Logo + 用户下拉菜单 / 登录按钮
     │   ├── AppSidebar.vue               #   侧栏：按角色条件渲染的 el-menu
     │   ├── AppFooter.vue                #   底栏
+    │   ├── AvatarCropper.vue            #   头像裁剪：拖拽定位 + 缩放 + Canvas 裁剪输出
     │   ├── EmptyState.vue               #   空数据占位（图标 + 描述 + 按钮）
     │   └── LoadingState.vue             #   加载中占位（旋转动画）
     │
@@ -258,6 +259,7 @@ resetPassword(id, password)            // PUT /api/user/admin/reset-password
 applySeller()                          // POST /api/user/apply-seller
 getApplications()                      // GET /api/user/admin/applications
 processApplication(id, approved)       // PUT /api/user/admin/applications/:id
+uploadAvatar(file)                     // POST /api/user/avatar/upload (FormData)
 ```
 
 ### product.js
@@ -275,6 +277,7 @@ updateProduct(data)                    // PUT /api/product
 deleteProduct(id)                      // DELETE /api/product/:id
 getPendingProducts({ page, size })     // GET /api/product/admin/pending
 reviewProduct(id, approved)            // PUT /api/product/admin/review/:id
+uploadImage(file)                      // POST /api/product/upload (FormData)
 ```
 
 ### cart.js
@@ -395,6 +398,9 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 ### 个人中心（UserInfo.vue）
 
 ```
+头像   → 圆形展示(96px)，hover 显示"更换头像"遮罩
+        点击 → 选图片文件 → AvatarCropper 裁剪弹窗
+        裁剪确认 → uploadAvatar() 上传 MinIO → updateUserInfo({avatar}) 保存
 信息卡片 → 用户名(只读) + 角色标签 + 昵称/手机/邮箱(可编辑)
 动作按钮 → 编辑资料(切换输入框/文本) | 申请成为卖家(仅BUYER可见)
 保存 → updateUserInfo() → fetchUserInfo() 刷新
@@ -414,13 +420,16 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 表格 → ID | 缩略图 | 名称 | 价格 | 库存 | 销量 | 状态标签
 操作 → 添加(链接到表单) | 编辑 | 删除(确认)
 状态 → 上架(green) / 下架(red) / 审核中(orange)
+自动刷新 → 每 30s 静默拉取最新商品状态（无需手动刷新即可看到审核结果）
 ```
 
 ### 商品表单（ProductForm.vue）
 
 ```
 表单字段 → 名称 | 分类(tree-select) | 价格 | 库存 | 描述(textarea)
-         主图URL(实时预览 + 加载失败占位) | 状态(仅ADMIN可见)
+         主图上传(点击上传区域 → 选图片文件 → uploadImage() 上传 MinIO → 返回 URL 填入表单
+                  + 实时预览 200×150 + URL 输入框(可手动修改) + 删除按钮)
+        状态(仅ADMIN可见)
 提交 → addProduct() 或 updateProduct()
 路由复用于添加(/add)和编辑(/:id/edit)
 ```
@@ -445,7 +454,20 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 
 ```
 表格 → ID | 缩略图 | 名称 | 价格 | 库存 | 卖家ID | 通过/拒绝按钮
-操作后 → 该行从列表移除
+操作后 → 审批后立即从列表移除（乐观更新）
+自动刷新 → 每 30s 静默拉取新待审商品（无需手动刷新）
+```
+
+### 头像裁剪（AvatarCropper.vue）
+
+```
+触发 → 用户选择图片文件后渲染（Teleport 到 body 全屏遮罩）
+布局 → 裁剪视口(320px高) + 缩放滑块(50%-300%) + 确认/取消按钮
+交互 → 鼠标/触摸拖拽图片移动定位，下方滑块缩放
+     圆形蒙版(box-shadow 实现镂空) + 虚线圆圈指示裁剪区域
+裁剪 → Canvas drawImage（根据偏移/缩放计算源矩形）
+     → canvas.toBlob('image/jpeg', 0.85) 输出 300×300 JPEG
+     → emit('cropped', blob) 通知父组件上传
 ```
 
 ---
@@ -494,7 +516,10 @@ npm run build     # 生产构建 → dist/
 |---|---|---|
 | API 500 | 对应后端服务未启动或 Nacos 注册失败 | 检查 Nacos 服务列表，确认所有服务健康 |
 | 页面空白/路由不跳转 | 后端返回非 JSON 格式 | 检查 Vite 代理配置，确认 Gateway 端口正确 |
-| 图片加载失败 | 网络不通或图片链接不可用 | 使用直链图片 URL（如 picsum.photos） |
+| 图片加载失败 | 图片 URL 不可用或 MinIO 未启动 | 确认 MinIO 容器运行中，Bucket 已创建并有公开读策略 |
+| 头像/商品图上传失败 | MinIO 容器未启动或网络不通 | `docker compose up -d minio`，检查 9000 端口 |
+| 裁剪后头像模糊 | Canvas 输出尺寸不够 | 已固定 300×300，质量 0.85 |
+| 审核/管理页状态不更新 | 之前需要手动刷新 | 已添加 30s 静默轮询，自动拉取最新状态 |
 | 改角色后菜单没变 | JWT 中 role 仍是旧值 | 退出重新登录获取新 JWT |
 | 下单后购物车没清空 | 后端 Feign 调用 cart/clear 失败 | 检查 cloud-cart 服务是否启动 |
 | 下拉框选分类无反应 | 前端未绑定 change 事件 | 确认 @change="search" 已添加 |
