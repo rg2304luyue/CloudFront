@@ -7,7 +7,7 @@
         <el-icon v-if="keyword" :size="16" color="#9ca3af" class="clear-icon" @click="keyword='';search()"><Close /></el-icon>
       </div>
       <div class="category-select">
-        <el-select v-model="categoryId" placeholder="全部分类" clearable size="large" class="select-inner">
+        <el-select v-model="categoryId" placeholder="全部分类" clearable size="large" class="select-inner" @change="search">
           <el-option v-for="c in flatCategories" :key="c.value" :label="c.label" :value="c.value" />
         </el-select>
       </div>

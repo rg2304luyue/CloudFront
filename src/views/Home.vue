@@ -36,11 +36,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getProductList } from '@/api/product'
+import { getHotProducts } from '@/api/product'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 const products = ref([]); const loading = ref(true)
-onMounted(async () => { try { const r = await getProductList({ page: 1, size: 8 }); products.value = r.data || [] } finally { loading.value = false } })
+onMounted(async () => { try { const r = await getHotProducts(); products.value = r.data || [] } finally { loading.value = false } })
 </script>
 
 <style scoped>

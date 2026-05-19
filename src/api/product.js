@@ -24,6 +24,10 @@ export function getProductList(params) {
   return request.get('/product/list', { params })
 }
 
+export function getHotProducts() {
+  return request.get('/product/hot')
+}
+
 export function getMyProducts(params) {
   return request.get('/product/my-list', { params })
 }
