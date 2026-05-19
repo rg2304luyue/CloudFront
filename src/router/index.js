@@ -39,6 +39,11 @@ const routes = [
         path: 'admin/users', name: 'AdminUsers',
         component: () => import('@/views/admin/UserList.vue'),
         meta: { title: '用户管理', requireAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'admin/review', name: 'ProductReview',
+        component: () => import('@/views/admin/ProductReview.vue'),
+        meta: { title: '商品审核', requireAuth: true, roles: ['ADMIN'] }
       }
     ]
   },

@@ -39,3 +39,11 @@ export function updateProduct(data) {
 export function deleteProduct(id) {
   return request.delete(`/product/${id}`)
 }
+
+export function getPendingProducts(params) {
+  return request.get('/product/admin/pending', { params })
+}
+
+export function reviewProduct(id, approved) {
+  return request.put(`/product/admin/review/${id}`, null, { params: { approved } })
+}

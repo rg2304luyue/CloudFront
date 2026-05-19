@@ -25,9 +25,17 @@
         <el-input v-model="form.description" type="textarea" :rows="3" />
       </el-form-item>
       <el-form-item label="主图URL">
-        <el-input v-model="form.mainImage" placeholder="图片链接" />
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <el-input v-model="form.mainImage" placeholder="图片直链，如 https://xxx.jpg" />
+          <el-image v-if="form.mainImage" :src="form.mainImage" fit="contain"
+            style="width:200px;height:150px;border:1px solid var(--border);border-radius:6px"
+            @error="imgError = true"
+          >
+            <template #error><div class="img-error">图片加载失败</div></template>
+          </el-image>
+        </div>
       </el-form-item>
-      <el-form-item label="状态">
+      <el-form-item v-if="userStore.isAdmin" label="状态">
         <el-radio-group v-model="form.status">
           <el-radio :value="1">上架</el-radio>
           <el-radio :value="0">下架</el-radio>
@@ -47,13 +55,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { getCategoryTree, getProductDetail, addProduct, updateProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
 
-const route = useRoute(); const router = useRouter()
+import { useUserStore } from '@/stores/user'
+
+const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
 const isEdit = computed(() => !!route.params.id)
-const formRef = ref(null); const submitting = ref(false); const categoryTree = ref([])
+const formRef = ref(null); const submitting = ref(false); const categoryTree = ref([]); const imgError = ref(false)
 
 const form = reactive({
   name: '', categoryId: null, price: 0, stock: 0,
-  description: '', mainImage: '', images: '', status: 1
+  description: '', mainImage: '', images: null, status: 1
 })
 
 const rules = {
@@ -78,7 +88,7 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value) {
-      await updateProduct({ id: Number(route.params.id), ...form })
+      await updateProduct({ id: route.params.id, ...form })
       ElMessage.success('更新成功')
     } else {
       await addProduct(form)

@@ -23,7 +23,7 @@
       <el-table-column prop="sales" label="销量" width="80" />
       <el-table-column label="状态" width="80">
         <template #default="{row}">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '上架' : '下架' }}</el-tag>
+          <el-tag :type="row.status === 1 ? 'success' : row.status === 2 ? 'warning' : 'info'">{{ row.status === 1 ? '上架' : row.status === 2 ? '审核中' : '下架' }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right">

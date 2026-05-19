@@ -43,6 +43,10 @@
         </el-menu-item>
       </template>
       <template v-if="userStore.isAdmin">
+        <el-menu-item index="/admin/review">
+          <el-icon><Checked /></el-icon>
+          <span>商品审核</span>
+        </el-menu-item>
         <el-menu-item index="/admin/users">
           <el-icon><Setting /></el-icon>
           <span>用户管理</span>
@@ -79,6 +83,7 @@ const activeMenu = computed(() => {
   if (p.startsWith('/user/address')) return '/user/address'
   if (p.startsWith('/seller/products')) return '/seller/products'
   if (p.startsWith('/seller/categories')) return '/seller/categories'
+  if (p.startsWith('/admin/review')) return '/admin/review'
   if (p.startsWith('/admin/users')) return '/admin/users'
   return '/home'
 })
