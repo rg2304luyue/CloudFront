@@ -31,6 +31,23 @@
         <el-icon><MapLocation /></el-icon>
         <span>收货地址</span>
       </el-menu-item>
+
+      <template v-if="userStore.isSeller || userStore.isAdmin">
+        <el-menu-item index="/seller/products">
+          <el-icon><Shop /></el-icon>
+          <span>商品管理</span>
+        </el-menu-item>
+        <el-menu-item index="/seller/categories">
+          <el-icon><Collection /></el-icon>
+          <span>分类管理</span>
+        </el-menu-item>
+      </template>
+      <template v-if="userStore.isAdmin">
+        <el-menu-item index="/admin/users">
+          <el-icon><Setting /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
+      </template>
     </el-menu>
 
     <div class="sidebar-footer">
@@ -44,9 +61,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 
 const route = useRoute()
+const userStore = useUserStore()
 const cartStore = useCartStore()
 const collapsed = ref(false)
 
@@ -58,6 +77,9 @@ const activeMenu = computed(() => {
   if (p.startsWith('/order')) return '/order/list'
   if (p.startsWith('/user/info')) return '/user/info'
   if (p.startsWith('/user/address')) return '/user/address'
+  if (p.startsWith('/seller/products')) return '/seller/products'
+  if (p.startsWith('/seller/categories')) return '/seller/categories'
+  if (p.startsWith('/admin/users')) return '/admin/users'
   return '/home'
 })
 </script>

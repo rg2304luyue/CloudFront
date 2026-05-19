@@ -5,6 +5,7 @@
     <div v-else-if="userStore.userInfo" class="card">
       <div class="fields">
         <div class="field"><span class="label">用户名</span><span>{{ userStore.userInfo.username }}</span></div>
+        <div class="field"><span class="label">角色</span><el-tag :type="roleTagType" size="small">{{ userStore.roleLabel }}</el-tag></div>
         <div class="field">
           <span class="label">昵称</span>
           <input v-if="editing" v-model="form.nickname" class="field-input" />
@@ -26,24 +27,41 @@
           <button class="btn-primary" @click="save">保存</button>
           <button class="btn-ghost" @click="editing=false">取消</button>
         </template>
-        <button v-else class="btn-ghost" @click="startEdit">编辑资料</button>
+        <template v-else>
+          <button class="btn-ghost" @click="startEdit">编辑资料</button>
+          <button v-if="userStore.role === 'BUYER'" class="btn-primary" @click="handleApply" :disabled="applied">申请成为卖家</button>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { updateUserInfo } from '@/api/user'
+import { updateUserInfo, applySeller } from '@/api/user'
 import { ElMessage } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 
-const userStore = useUserStore(); const loading = ref(false); const editing = ref(false)
+const userStore = useUserStore(); const loading = ref(false); const editing = ref(false); const applied = ref(false)
 const form = reactive({ nickname: '', phone: '', email: '' })
+
+const roleTagType = computed(() => {
+  if (userStore.isAdmin) return 'danger'
+  if (userStore.isSeller) return 'primary'
+  return 'info'
+})
 
 function startEdit() { form.nickname = userStore.userInfo.nickname || ''; form.phone = userStore.userInfo.phone || ''; form.email = userStore.userInfo.email || ''; editing.value = true }
 async function save() { await updateUserInfo(form); await userStore.fetchUserInfo(); ElMessage.success('已更新'); editing.value = false }
+
+async function handleApply() {
+  try {
+    await applySeller()
+    ElMessage.success('申请已提交！')
+    applied.value = true
+  } catch {}
+}
 </script>
 
 <style scoped>

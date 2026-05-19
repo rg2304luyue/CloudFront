@@ -8,6 +8,10 @@ export const useUserStore = defineStore('user', () => {
   const token = ref(getToken() || '')
   const userInfo = ref(null)
   const isLogin = computed(() => !!token.value)
+  const role = computed(() => userInfo.value?.role || 'BUYER')
+  const isSeller = computed(() => role.value === 'SELLER')
+  const isAdmin = computed(() => role.value === 'ADMIN')
+  const roleLabel = computed(() => ({ BUYER: '买家', SELLER: '卖家', ADMIN: '管理员' })[role.value] || '买家')
 
   async function login(username, password) {
     const res = await loginApi(username, password)
@@ -38,5 +42,5 @@ export const useUserStore = defineStore('user', () => {
     removeUser()
   }
 
-  return { token, userInfo, isLogin, login, register, fetchUserInfo, logout }
+  return { token, userInfo, isLogin, role, isSeller, isAdmin, roleLabel, login, register, fetchUserInfo, logout }
 })

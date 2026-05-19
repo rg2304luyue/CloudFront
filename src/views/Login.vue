@@ -55,7 +55,11 @@ async function handleLogin() {
     await userStore.fetchUserInfo()
     await cartStore.fetchCart()
     ElMessage.success('登录成功')
-    router.push(route.query.redirect || '/home')
+    const target = route.query.redirect || (
+      userStore.isAdmin ? '/admin/users' :
+      userStore.isSeller ? '/seller/products' : '/home'
+    )
+    router.push(target)
   } catch {} finally { loading.value = false }
 }
 </script>

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isLoggedIn } from '@/utils/auth'
+import { isLoggedIn, getUser } from '@/utils/auth'
 
 const routes = [
   {
@@ -7,78 +7,46 @@ const routes = [
     component: () => import('@/layout/MainLayout.vue'),
     redirect: '/home',
     children: [
+      { path: 'home', name: 'Home', component: () => import('@/views/Home.vue'), meta: { title: '首页' } },
+      { path: 'product/list', name: 'ProductList', component: () => import('@/views/product/ProductList.vue'), meta: { title: '商品列表' } },
+      { path: 'product/:id', name: 'ProductDetail', component: () => import('@/views/product/ProductDetail.vue'), meta: { title: '商品详情' } },
+      { path: 'cart', name: 'Cart', component: () => import('@/views/cart/Cart.vue'), meta: { title: '购物车', requireAuth: true } },
+      { path: 'order/list', name: 'OrderList', component: () => import('@/views/order/OrderList.vue'), meta: { title: '我的订单', requireAuth: true } },
+      { path: 'order/:id', name: 'OrderDetail', component: () => import('@/views/order/OrderDetail.vue'), meta: { title: '订单详情', requireAuth: true } },
+      { path: 'user/info', name: 'UserInfo', component: () => import('@/views/user/UserInfo.vue'), meta: { title: '个人中心', requireAuth: true } },
+      { path: 'user/address', name: 'Address', component: () => import('@/views/user/Address.vue'), meta: { title: '收货地址', requireAuth: true } },
       {
-        path: 'home', name: 'Home',
-        component: () => import('@/views/Home.vue'),
-        meta: { title: '首页' }
+        path: 'seller/products', name: 'SellerProducts',
+        component: () => import('@/views/seller/ProductManage.vue'),
+        meta: { title: '商品管理', requireAuth: true, roles: ['SELLER', 'ADMIN'] }
       },
       {
-        path: 'product/list', name: 'ProductList',
-        component: () => import('@/views/product/ProductList.vue'),
-        meta: { title: '商品列表' }
+        path: 'seller/products/add', name: 'SellerProductAdd',
+        component: () => import('@/views/seller/ProductForm.vue'),
+        meta: { title: '添加商品', requireAuth: true, roles: ['SELLER', 'ADMIN'] }
       },
       {
-        path: 'product/:id', name: 'ProductDetail',
-        component: () => import('@/views/product/ProductDetail.vue'),
-        meta: { title: '商品详情' }
+        path: 'seller/products/:id/edit', name: 'SellerProductEdit',
+        component: () => import('@/views/seller/ProductForm.vue'),
+        meta: { title: '编辑商品', requireAuth: true, roles: ['SELLER', 'ADMIN'] }
       },
       {
-        path: 'cart', name: 'Cart',
-        component: () => import('@/views/cart/Cart.vue'),
-        meta: { title: '购物车', requireAuth: true }
+        path: 'seller/categories', name: 'SellerCategories',
+        component: () => import('@/views/seller/CategoryManage.vue'),
+        meta: { title: '分类管理', requireAuth: true, roles: ['SELLER', 'ADMIN'] }
       },
       {
-        path: 'order/list', name: 'OrderList',
-        component: () => import('@/views/order/OrderList.vue'),
-        meta: { title: '我的订单', requireAuth: true }
-      },
-      {
-        path: 'order/:id', name: 'OrderDetail',
-        component: () => import('@/views/order/OrderDetail.vue'),
-        meta: { title: '订单详情', requireAuth: true }
-      },
-      {
-        path: 'user/info', name: 'UserInfo',
-        component: () => import('@/views/user/UserInfo.vue'),
-        meta: { title: '个人中心', requireAuth: true }
-      },
-      {
-        path: 'user/address', name: 'Address',
-        component: () => import('@/views/user/Address.vue'),
-        meta: { title: '收货地址', requireAuth: true }
+        path: 'admin/users', name: 'AdminUsers',
+        component: () => import('@/views/admin/UserList.vue'),
+        meta: { title: '用户管理', requireAuth: true, roles: ['ADMIN'] }
       }
     ]
   },
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/Login.vue'),
-    meta: { title: '登录' }
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: () => import('@/views/Register.vue'),
-    meta: { title: '注册' }
-  },
-  {
-    path: '/403',
-    name: 'Forbidden',
-    component: () => import('@/views/error/403.vue'),
-    meta: { title: '禁止访问' }
-  },
-  {
-    path: '/500',
-    name: 'ServerError',
-    component: () => import('@/views/error/500.vue'),
-    meta: { title: '服务错误' }
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('@/views/error/404.vue'),
-    meta: { title: '页面不存在' }
-  }
+  { path: '/login', name: 'Login', component: () => import('@/views/Login.vue'), meta: { title: '登录' } },
+  { path: '/register', name: 'Register', component: () => import('@/views/Register.vue'), meta: { title: '注册' } },
+  { path: '/403', name: 'Forbidden', component: () => import('@/views/error/403.vue'), meta: { title: '禁止访问' } },
+  { path: '/500', name: 'ServerError', component: () => import('@/views/error/500.vue'), meta: { title: '服务错误' } },
+  { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/views/error/404.vue'), meta: { title: '页面不存在' } }
 ]
 
 const router = createRouter({
@@ -90,12 +58,21 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - CloudMall` : 'CloudMall'
 
-  // 仅对标记了 requireAuth 的路由进行登录校验
   if (to.meta.requireAuth && !isLoggedIn()) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.roles && to.meta.roles.length > 0) {
+    const user = getUser()
+    const userRole = user?.role || 'BUYER'
+    if (!to.meta.roles.includes(userRole)) {
+      next({ name: 'Forbidden' })
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

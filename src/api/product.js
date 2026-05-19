@@ -24,6 +24,10 @@ export function getProductList(params) {
   return request.get('/product/list', { params })
 }
 
+export function getMyProducts(params) {
+  return request.get('/product/my-list', { params })
+}
+
 export function addProduct(data) {
   return request.post('/product', data)
 }

@@ -15,6 +15,7 @@
               <el-icon :size="18"><UserFilled /></el-icon>
             </el-avatar>
             <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '用户' }}</span>
+            <span v-if="userStore.role !== 'BUYER'" class="role-tag" :class="userStore.role">{{ userStore.roleLabel }}</span>
             <el-icon :size="12"><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
@@ -96,5 +97,8 @@ function handleCommand(cmd) {
 .guest .user-avatar-icon { background: #f3f4f6; color: var(--text-muted); }
 
 .user-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-secondary); }
+.role-tag { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 500; }
+.role-tag.SELLER { background: #e6f7ff; color: #1890ff; }
+.role-tag.ADMIN { background: #fff1f0; color: #f5222d; }
 .login-text { font-size: 13px; color: var(--text-muted); }
 </style>
