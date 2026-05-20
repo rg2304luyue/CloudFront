@@ -11,7 +11,7 @@
       <template v-if="userStore.isLogin">
         <el-dropdown trigger="click" @command="handleCommand">
           <div class="user-area">
-            <el-avatar :size="32" class="user-avatar-icon">
+            <el-avatar :size="32" :src="userStore.userInfo?.avatar" class="user-avatar-icon">
               <el-icon :size="18"><UserFilled /></el-icon>
             </el-avatar>
             <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '用户' }}</span>

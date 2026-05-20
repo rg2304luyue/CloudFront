@@ -13,6 +13,7 @@ const routes = [
       { path: 'cart', name: 'Cart', component: () => import('@/views/cart/Cart.vue'), meta: { title: '购物车', requireAuth: true } },
       { path: 'order/list', name: 'OrderList', component: () => import('@/views/order/OrderList.vue'), meta: { title: '我的订单', requireAuth: true } },
       { path: 'order/:id', name: 'OrderDetail', component: () => import('@/views/order/OrderDetail.vue'), meta: { title: '订单详情', requireAuth: true } },
+      { path: 'payment/result', name: 'PaymentResult', component: () => import('@/views/payment/PaymentResult.vue'), meta: { title: '支付结果', requireAuth: true } },
       { path: 'user/info', name: 'UserInfo', component: () => import('@/views/user/UserInfo.vue'), meta: { title: '个人中心', requireAuth: true } },
       { path: 'user/address', name: 'Address', component: () => import('@/views/user/Address.vue'), meta: { title: '收货地址', requireAuth: true } },
       {

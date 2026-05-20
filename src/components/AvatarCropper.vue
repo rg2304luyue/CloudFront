@@ -75,23 +75,66 @@ function doCrop() {
   cropping.value = true
   const img = imgRef.value
   const vp = viewport.value
-  const vpRect = vp.getBoundingClientRect()
-  const circleSize = Math.min(vpRect.width, vpRect.height)
+  const vpW = vp.clientWidth
+  const vpH = vp.clientHeight
+
+  // Circle mask is 200px diameter, fixed in CSS
+  const circleDia = 200
+  const circleR = circleDia / 2
+  const s = zoom.value / 100
+
+  // Image CSS box: 300x300 centered in viewport
+  // After transform: center at (vpW/2+offsetX, vpH/2+offsetY), scaled by s
+  const boxCX = vpW / 2 + offsetX.value
+  const boxCY = vpH / 2 + offsetY.value
+
+  // Circle center is viewport center
+  // Circle top-left in image-box-local coords (before CSS scale)
+  const cxInBox = (vpW / 2 - circleR - boxCX) / s + 150
+  const cyInBox = (vpH / 2 - circleR - boxCY) / s + 150
+  const cwInBox = circleDia / s
+  const chInBox = circleDia / s
+
+  // object-fit: contain — image may not fill the full 300x300 box
+  const iw = img.naturalWidth
+  const ih = img.naturalHeight
+  const fit = Math.min(300 / iw, 300 / ih)
+  const fitW = iw * fit
+  const fitH = ih * fit
+  const padX = (300 - fitW) / 2
+  const padY = (300 - fitH) / 2
+
+  // Map box coords to source image coords
+  let srcX = (cxInBox - padX) / fit
+  let srcY = (cyInBox - padY) / fit
+  let srcW = cwInBox / fit
+  let srcH = chInBox / fit
+
+  // Clamp to image bounds
+  if (srcX < 0) { srcW += srcX; srcX = 0 }
+  if (srcY < 0) { srcH += srcY; srcY = 0 }
+  if (srcX + srcW > iw) srcW = iw - srcX
+  if (srcY + srcH > ih) srcH = ih - srcY
+
   const canvas = document.createElement('canvas')
   canvas.width = 300; canvas.height = 300
   const ctx = canvas.getContext('2d')
-  // Calculate image position relative to viewport center
-  const centerX = vpRect.width / 2
-  const centerY = vpRect.height / 2
-  const halfCircle = circleSize / 2
-  const s = zoom.value / 100
-  // Source rect in image coordinates
-  const srcX = (centerX - halfCircle - offsetX.value) / s
-  const srcY = (centerY - halfCircle - offsetY.value) / s
-  const srcW = circleSize / s
-  const srcH = circleSize / s
-  // Draw cropped square on canvas, then clip to circle
-  ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, 300, 300)
+
+  // White background, then clip to circle
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, 300, 300)
+  ctx.beginPath()
+  ctx.arc(150, 150, 150, 0, Math.PI * 2)
+  ctx.clip()
+
+  // Compute destination rect to fill the circle proportionally
+  const dstScale = Math.max(300 / srcW, 300 / srcH)
+  const dstW = srcW * dstScale
+  const dstH = srcH * dstScale
+  const dstX = (300 - dstW) / 2
+  const dstY = (300 - dstH) / 2
+
+  ctx.drawImage(img, Math.round(srcX), Math.round(srcY), Math.round(srcW), Math.round(srcH), Math.round(dstX), Math.round(dstY), Math.round(dstW), Math.round(dstH))
   canvas.toBlob(blob => {
     cropping.value = false
     if (blob) emit('cropped', blob)

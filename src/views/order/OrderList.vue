@@ -15,6 +15,7 @@
           <div class="order-row"><span class="label">时间</span><span>{{ order.createTime }}</span></div>
         </div>
         <div class="order-foot" v-if="order.status === 0">
+          <button class="pay-btn" @click.stop="handlePay(order.orderNo)">立即支付</button>
           <button class="cancel-btn" @click.stop="handleCancel(order.id)">取消订单</button>
         </div>
       </div>
@@ -29,6 +30,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getOrderList, cancelOrder } from '@/api/order'
+import { createAlipayPayment } from '@/api/payment'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -40,6 +42,7 @@ function statusText(s) { return statusMap[s] || '未知' }
 onMounted(() => fetchOrders())
 async function fetchOrders() { loading.value = true; try { const r = await getOrderList({ page: page.value, size: size.value }); orders.value = r.data || []; total.value = r.total || 0 } finally { loading.value = false } }
 function handleCancel(id) { ElMessageBox.confirm('确定取消该订单？', '提示', { type: 'warning' }).then(async () => { await cancelOrder(id); ElMessage.success('已取消'); fetchOrders() }).catch(() => {}) }
+function handlePay(orderNo) { ElMessageBox.confirm('即将跳转到支付宝进行支付', '确认支付', { confirmButtonText: '去支付', cancelButtonText: '取消', type: 'info' }).then(async () => { const res = await createAlipayPayment(orderNo); const payForm = res.data; if (payForm) { const w = window.open('', '_blank'); w.document.write(payForm); w.document.close() } }).catch(() => {}) }
 </script>
 
 <style scoped>
@@ -59,6 +62,8 @@ function handleCancel(id) { ElMessageBox.confirm('确定取消该订单？', '�
 .label { color: var(--text-muted); min-width: 64px; }
 .amount { color: var(--danger); font-size: 14px; }
 .order-foot { text-align: right; padding-top: 12px; }
+.pay-btn { padding: 5px 20px; border: none; border-radius: 6px; background: var(--danger); color: #fff; font-size: 12px; cursor: pointer; margin-right: 8px; transition: background .15s; }
+.pay-btn:hover { background: #d94a4c; }
 .cancel-btn { padding: 5px 16px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all .15s; }
 .cancel-btn:hover { border-color: var(--danger); color: var(--danger); }
 .pagination-wrap { display: flex; justify-content: center; margin-top: 24px; }

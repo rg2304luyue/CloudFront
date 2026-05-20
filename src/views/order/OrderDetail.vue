@@ -16,6 +16,9 @@
         <div class="field full"><span class="label">收货地址</span><span>{{ order.receiverAddress || '-' }}</span></div>
         <div class="field full" v-if="order.remark"><span class="label">备注</span><span>{{ order.remark }}</span></div>
       </div>
+      <div class="action-row" v-if="order.status === 0">
+        <button class="pay-btn" @click="handlePay(order.orderNo)">立即支付</button>
+      </div>
       <div class="back-row"><button class="back-btn" @click="$router.back()">返回</button></div>
     </div>
     <EmptyState v-else description="订单不存在" @action="$router.back()" action-text="返回" />
@@ -26,6 +29,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderDetail } from '@/api/order'
+import { createAlipayPayment } from '@/api/payment'
+import { ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 
@@ -35,6 +40,7 @@ const statusMap = { 0: '待支付', 1: '已支付', 2: '已发货', 3: '已完�
 function statusText(s) { return statusMap[s] || '未知' }
 
 onMounted(async () => { try { const r = await getOrderDetail(route.params.id); order.value = r.data } finally { loading.value = false } })
+function handlePay(orderNo) { ElMessageBox.confirm('即将跳转到支付宝进行支付', '确认支付', { confirmButtonText: '去支付', cancelButtonText: '取消', type: 'info' }).then(async () => { const res = await createAlipayPayment(orderNo); const payForm = res.data; if (payForm) { const w = window.open('', '_blank'); w.document.write(payForm); w.document.close() } }).catch(() => {}) }
 </script>
 
 <style scoped>
@@ -54,7 +60,10 @@ onMounted(async () => { try { const r = await getOrderDetail(route.params.id); o
 .field span:not(.label) { font-size: 14px; }
 .mono { font-family: monospace; font-size: 12px !important; color: var(--text-secondary); }
 .amount { color: var(--danger); font-size: 18px; }
-.back-row { margin-top: 28px; }
+.action-row { display: flex; gap: 12px; margin-top: 28px; }
+.pay-btn { padding: 10px 32px; border: none; border-radius: 6px; background: var(--danger); color: #fff; font-size: 14px; cursor: pointer; font-weight: 500; transition: background .15s; }
+.pay-btn:hover { background: #d94a4c; }
+.back-row { margin-top: 20px; }
 .back-btn { padding: 8px 20px; border: 1px solid var(--border); border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; transition: all .15s; }
 .back-btn:hover { border-color: var(--primary); color: var(--primary); }
 </style>

@@ -38,20 +38,20 @@ CloudFront/
     │   └── cart.js                      #   购物车列表、勾选统计
     │
     ├── router/
-    │   └── index.js                     # 17 条路由 + 登录守卫 + 角色守卫
+    │   └── index.js                     # 18 条路由 + 登录守卫 + 角色守卫
     │
     ├── layout/
     │   └── MainLayout.vue               # 顶栏 + 侧栏 + 内容 + 底栏 框架
     │
     ├── components/                      # 公共组件
-    │   ├── AppHeader.vue                #   顶栏：Logo + 用户下拉菜单 / 登录按钮
+    │   ├── AppHeader.vue                #   顶栏：Logo + 头像 + 用户下拉菜单 / 登录按钮
     │   ├── AppSidebar.vue               #   侧栏：按角色条件渲染的 el-menu
     │   ├── AppFooter.vue                #   底栏
     │   ├── AvatarCropper.vue            #   头像裁剪：拖拽定位 + 缩放 + Canvas 裁剪输出
     │   ├── EmptyState.vue               #   空数据占位（图标 + 描述 + 按钮）
     │   └── LoadingState.vue             #   加载中占位（旋转动画）
     │
-    ├── views/                           # 17 个页面视图
+    ├── views/                           # 18 个页面视图
     │   ├── Home.vue                     #   首页：Hero Banner + 热门商品网格
     │   ├── Login.vue                    #   登录页（独立布局）
     │   ├── Register.vue                 #   注册页（独立布局）
@@ -59,6 +59,7 @@ CloudFront/
     │   ├── product/                     #   ProductList、ProductDetail
     │   ├── cart/                        #   Cart（表格 + 结算弹窗）
     │   ├── order/                       #   OrderList、OrderDetail
+    │   ├── payment/                     #   PaymentResult
     │   ├── user/                        #   UserInfo、Address
     │   ├── seller/                      #   ProductManage、ProductForm、CategoryManage
     │   └── admin/                       #   UserList、ProductReview
@@ -75,7 +76,7 @@ CloudFront/
 
 ## 路由表
 
-17 条路由，`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
+18 条路由，`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
 
 | 路径 | 页面 | 认证 | 角色限制 | 说明 |
 |---|---|---|---|---|
@@ -86,7 +87,8 @@ CloudFront/
 | `/register` | Register.vue | 否 | — | 独立布局 |
 | `/cart` | Cart.vue | 是 | — | 购物车表格 + 下单弹窗 |
 | `/order/list` | OrderList.vue | 是 | — | 订单卡片列表 |
-| `/order/:id` | OrderDetail.vue | 是 | — | 订单详情 |
+| `/order/:id` | OrderDetail.vue | 是 | — | 订单详情 + 立即支付按钮 |
+| `/payment/result` | PaymentResult.vue | 是 | — | 支付结果（成功/处理中/失败） |
 | `/user/info` | UserInfo.vue | 是 | — | 个人信息 + 申请卖家 |
 | `/user/address` | Address.vue | 是 | — | 地址 CRUD |
 | `/seller/products` | ProductManage.vue | 是 | SELLER, ADMIN | 商品管理表格 |
@@ -301,7 +303,8 @@ cancelOrder(id)                        // PUT /api/order/cancel/:id
 
 ### payment.js
 ```js
-getPaymentByOrderNo(orderNo)           // GET /api/payment/:orderNo
+createAlipayPayment(orderNo)             // POST /api/payment/pay/:orderNo  返回支付表单HTML
+getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo       查询支付记录
 ```
 
 ---
@@ -379,7 +382,8 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 
 ```
 卡片列表 → 每张卡片：订单号 + 状态徽标(颜色区分) + 金额 + 收货人 + 时间
-         待支付订单显示"取消订单"按钮
+         待支付订单显示"立即支付"和"取消订单"按钮
+	         点击"立即支付" → 调 API 获取支付宝表单 → 新窗口打开支付
 分页   → el-pagination
 状态徽标颜色：
   待支付(0)-orange  已支付(1)-green  已发货(2)-blue
@@ -392,7 +396,19 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 详情卡片 → 2列网格：
   订单号 / 创建时间 / 总金额 / 支付时间
   收货人 / 联系电话 / 收货地址 / 备注
-顶部状态徽标 + 返回按钮
+待支付状态显示"立即支付"按钮 + 返回按钮
+```
+
+### 支付结果（PaymentResult.vue）
+
+```
+支付宝付款完成 → 同步回跳到本页面（?orderNo=xxx）
+→ 调用 getPaymentByOrderNo() → 后端主动查支付宝确认交易状态
+→ 三态展示：
+    成功(绿色图标) → "支付成功，将尽快为您发货"
+    处理中(橙色图标) → "支付处理中，请勿重复支付"
+    失败(红色图标) → 参数错误
+→ 按钮：查看我的订单 / 返回首页
 ```
 
 ### 个人中心（UserInfo.vue）
@@ -524,3 +540,9 @@ npm run build     # 生产构建 → dist/
 | 下单后购物车没清空 | 后端 Feign 调用 cart/clear 失败 | 检查 cloud-cart 服务是否启动 |
 | 下拉框选分类无反应 | 前端未绑定 change 事件 | 确认 @change="search" 已添加 |
 | 选父分类查不到商品 | 之前只精确匹配分类 ID | 后端已改为递归收集子分类 ID |
+| 订单显示待支付但支付宝已扣款 | 异步通知无法到达本地 | 查询支付记录时后端主动查支付宝确认状态 |
+| 支付后跳转"localhost拒绝连接" | 前端端口不是默认5173，或未启动 | 确认 Vite preview/build 端口，更新 ALIPAY_RETURN_URL |
+| 点击支付后弹出支付宝错误页 | return_url 格式被支付宝拒绝 | 使用前端直连地址而非网关地址 |
+| 裁剪头像周围有黑框 | Canvas 未裁剪为圆形且 JPEG 不支持透明 | 已修复：白色填充 + 圆形 clip 路径 + clamp 边界 |
+| 裁剪头像位置偏上 | 计算未考虑 object-fit:contain 留白 | 已修复：正确映射 CSS 盒模型→源图像素坐标 |
+| 顶栏不显示头像 | 未上传过头像 | 上传后 el-avatar :src 绑定 avatar URL，无头像回退图标 |
