@@ -1,13 +1,13 @@
 <template>
-  <div class="error-page">
+  <div class="error-root">
     <div class="error-card">
-      <div class="code">500</div>
-      <el-icon :size="56" color="#ef4444"><WarningFilled /></el-icon>
-      <h2>服务内部错误</h2>
+      <div class="error-code">500</div>
+      <div class="error-icon danger"><el-icon :size="48"><WarningFilled /></el-icon></div>
+      <h2>服务器内部错误</h2>
       <p>服务器遇到了意外错误，我们正在尝试修复，请稍后再试</p>
-      <div class="btns">
-        <button class="btn-primary" @click="reload">刷新页面</button>
-        <button class="btn-ghost" @click="$router.push('/home')">返回首页</button>
+      <div class="error-actions">
+        <button class="btn btn-primary" @click="reload">刷新页面</button>
+        <button class="btn btn-ghost" @click="$router.push('/home')">返回首页</button>
       </div>
     </div>
   </div>
@@ -18,14 +18,47 @@ function reload() { window.location.reload() }
 </script>
 
 <style scoped>
-.error-page { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 120px); padding: 20px; }
-.error-card { text-align: center; padding: 48px 40px; }
-.code { font-size: 100px; font-weight: 800; color: #f3f4f6; line-height: 1; margin-bottom: -8px; }
-h2 { font-size: 20px; font-weight: 600; margin: 16px 0 8px; }
-p { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
-.btns { display: flex; gap: 10px; justify-content: center; }
-.btn-primary { padding: 9px 24px; border: none; border-radius: 6px; background: var(--primary); color: #fff; font-size: 14px; cursor: pointer; }
-.btn-primary:hover { background: var(--primary-dark); }
-.btn-ghost { padding: 9px 24px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); font-size: 14px; cursor: pointer; }
-.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.error-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 56px);
+  padding: 40px 24px;
+  background: var(--bg);
+}
+.error-card {
+  text-align: center;
+  max-width: 440px;
+}
+.error-code {
+  font-size: 120px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+  margin-bottom: -8px;
+}
+.error-icon.danger {
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+.error-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.error-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+.error-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
 </style>

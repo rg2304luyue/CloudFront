@@ -1,51 +1,65 @@
 <template>
   <div class="page-container">
-    <h2 class="page-title">个人中心</h2>
+    <PageHeader title="个人中心" subtitle="管理你的个人资料和头像" />
+
     <LoadingState v-if="loading" />
-    <div v-else-if="userStore.userInfo" class="card">
-      <!-- 头像区域 -->
-      <div class="avatar-section">
-        <div class="avatar-wrap" @click="!uploading && fileInput.click()" title="点击更换头像">
+    <div v-else-if="userStore.userInfo" class="profile">
+      <!-- Avatar Section -->
+      <div class="profile-avatar">
+        <div class="avatar-wrapper" @click="!uploading && fileInput.click()" title="点击更换头像">
           <el-image v-if="userStore.userInfo.avatar" :src="userStore.userInfo.avatar" fit="cover" class="avatar-img">
-            <template #error><el-icon :size="40" color="#d1d5db"><UserFilled /></el-icon></template>
+            <template #error>
+              <el-icon :size="40" color="#d1d5db"><UserFilled /></el-icon>
+            </template>
           </el-image>
           <el-icon v-else :size="40" color="#d1d5db"><UserFilled /></el-icon>
           <div class="avatar-overlay">
-            <el-icon :size="20" color="#fff"><CameraFilled /></el-icon>
+            <el-icon :size="20"><CameraFilled /></el-icon>
             <span>更换头像</span>
           </div>
         </div>
         <input ref="fileInput" type="file" accept="image/*" @change="onFileChange" class="file-input" />
+
+        <h3 class="profile-name">{{ userStore.userInfo.nickname || userStore.userInfo.username }}</h3>
+        <span class="profile-role">
+          <el-tag :type="roleTagType" size="small">{{ userStore.roleLabel }}</el-tag>
+        </span>
       </div>
 
-      <div class="fields">
-        <div class="field"><span class="label">用户名</span><span>{{ userStore.userInfo.username }}</span></div>
-        <div class="field"><span class="label">角色</span><el-tag :type="roleTagType" size="small">{{ userStore.roleLabel }}</el-tag></div>
+      <!-- Info Fields -->
+      <div class="profile-fields card">
         <div class="field">
-          <span class="label">昵称</span>
-          <input v-if="editing" v-model="form.nickname" class="field-input" />
-          <span v-else>{{ userStore.userInfo.nickname || '-' }}</span>
+          <span class="field-label">用户名</span>
+          <span class="field-value">{{ userStore.userInfo.username }}</span>
         </div>
         <div class="field">
-          <span class="label">手机号</span>
-          <input v-if="editing" v-model="form.phone" class="field-input" />
-          <span v-else>{{ userStore.userInfo.phone || '-' }}</span>
+          <span class="field-label">昵称</span>
+          <input v-if="editing" v-model="form.nickname" class="field-input" placeholder="输入昵称" />
+          <span v-else class="field-value">{{ userStore.userInfo.nickname || '—' }}</span>
         </div>
         <div class="field">
-          <span class="label">邮箱</span>
-          <input v-if="editing" v-model="form.email" class="field-input" />
-          <span v-else>{{ userStore.userInfo.email || '-' }}</span>
+          <span class="field-label">手机号</span>
+          <input v-if="editing" v-model="form.phone" class="field-input" placeholder="输入手机号" />
+          <span v-else class="field-value">{{ userStore.userInfo.phone || '—' }}</span>
         </div>
-      </div>
-      <div class="actions">
-        <template v-if="editing">
-          <button class="btn-primary" @click="save">保存</button>
-          <button class="btn-ghost" @click="editing=false">取消</button>
-        </template>
-        <template v-else>
-          <button class="btn-ghost" @click="startEdit">编辑资料</button>
-          <button v-if="userStore.role === 'BUYER'" class="btn-primary" @click="handleApply" :disabled="applied">申请成为卖家</button>
-        </template>
+        <div class="field">
+          <span class="field-label">邮箱</span>
+          <input v-if="editing" v-model="form.email" class="field-input" placeholder="输入邮箱" />
+          <span v-else class="field-value">{{ userStore.userInfo.email || '—' }}</span>
+        </div>
+
+        <div class="field-actions">
+          <template v-if="editing">
+            <button class="btn btn-primary" @click="save">保存</button>
+            <button class="btn btn-ghost" @click="editing = false">取消</button>
+          </template>
+          <template v-else>
+            <button class="btn btn-ghost" @click="startEdit">编辑资料</button>
+            <button v-if="userStore.role === 'BUYER'" class="btn btn-primary" @click="handleApply" :disabled="applied">
+              {{ applied ? '已申请' : '申请成为卖家' }}
+            </button>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -58,12 +72,18 @@ import { ref, reactive, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { updateUserInfo, applySeller, uploadAvatar } from '@/api/user'
 import { ElMessage } from 'element-plus'
-import { CameraFilled, UserFilled } from '@element-plus/icons-vue'
 import LoadingState from '@/components/LoadingState.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import AvatarCropper from '@/components/AvatarCropper.vue'
 
-const userStore = useUserStore(); const loading = ref(false); const editing = ref(false); const applied = ref(false)
-const uploading = ref(false); const fileInput = ref(null); const cropFile = ref(null)
+const userStore = useUserStore()
+const loading = ref(false)
+const editing = ref(false)
+const applied = ref(false)
+const uploading = ref(false)
+const fileInput = ref(null)
+const cropFile = ref(null)
+
 const form = reactive({ nickname: '', phone: '', email: '' })
 
 const roleTagType = computed(() => {
@@ -72,8 +92,19 @@ const roleTagType = computed(() => {
   return 'info'
 })
 
-function startEdit() { form.nickname = userStore.userInfo.nickname || ''; form.phone = userStore.userInfo.phone || ''; form.email = userStore.userInfo.email || ''; editing.value = true }
-async function save() { await updateUserInfo(form); await userStore.fetchUserInfo(); ElMessage.success('已更新'); editing.value = false }
+function startEdit() {
+  form.nickname = userStore.userInfo.nickname || ''
+  form.phone = userStore.userInfo.phone || ''
+  form.email = userStore.userInfo.email || ''
+  editing.value = true
+}
+
+async function save() {
+  await updateUserInfo(form)
+  await userStore.fetchUserInfo()
+  ElMessage.success('已更新')
+  editing.value = false
+}
 
 async function handleApply() {
   try {
@@ -109,35 +140,120 @@ async function handleCropped(blob) {
 </script>
 
 <style scoped>
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; max-width: 520px; }
-.avatar-section { display: flex; justify-content: center; margin-bottom: 28px; }
-.avatar-wrap {
-  position: relative; width: 96px; height: 96px; border-radius: 50%;
-  overflow: hidden; cursor: pointer; border: 3px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  background: #f3f4f6; transition: border-color .15s;
+.profile {
+  max-width: 560px;
+  margin: 0 auto;
 }
-.avatar-wrap:hover { border-color: var(--primary); }
-.avatar-wrap:hover .avatar-overlay { opacity: 1; }
+
+/* Avatar */
+.profile-avatar {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid var(--primary-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f6fa;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.avatar-wrapper:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 6px rgba(79,110,245,.1);
+}
+.avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+
 .avatar-img { width: 100%; height: 100%; }
-.avatar-img :deep(img) { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.avatar-overlay {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: rgba(0,0,0,.45); display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px;
-  opacity: 0; transition: opacity .2s; color: #fff; font-size: 11px;
+.avatar-img :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  color: #fff;
+  font-size: 11px;
+}
+
 .file-input { display: none; }
 
-.fields { display: flex; flex-direction: column; gap: 18px; margin-bottom: 24px; }
-.field { display: flex; flex-direction: column; gap: 4px; }
-.label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
-.field span:not(.label) { font-size: 14px; }
-.field-input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: border-color .15s; }
-.field-input:focus { border-color: var(--primary); }
-.actions { display: flex; gap: 8px; }
-.btn-primary { padding: 8px 20px; border: none; border-radius: 6px; background: var(--primary); color: #fff; font-size: 13px; cursor: pointer; transition: background .15s; }
-.btn-primary:hover { background: var(--primary-dark); }
-.btn-ghost { padding: 8px 20px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); font-size: 13px; cursor: pointer; transition: all .15s; }
-.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+.profile-name {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 14px;
+}
+.profile-role {
+  display: inline-block;
+  margin-top: 6px;
+}
+
+/* Fields */
+.profile-fields {
+  padding: 28px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.field:last-of-type {
+  border-bottom: none;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  width: 80px;
+}
+.field-value {
+  font-size: 14px;
+  color: var(--text);
+  text-align: right;
+  flex: 1;
+}
+.field-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  outline: none;
+  text-align: right;
+  width: 200px;
+  transition: border-color var(--transition-fast);
+}
+.field-input:focus {
+  border-color: var(--primary);
+}
+
+.field-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 20px;
+  justify-content: flex-end;
+}
 </style>

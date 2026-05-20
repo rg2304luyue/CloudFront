@@ -1,37 +1,44 @@
 <template>
   <div class="page-container">
     <div class="page-head">
-      <h2 class="page-title">分类管理</h2>
+      <PageHeader title="分类管理" subtitle="管理商品分类层级" class="head-flex" />
       <el-button type="primary" @click="showDialog(null)">
-        <el-icon><Plus /></el-icon> 添加分类
+        <el-icon><Plus /></el-icon>添加分类
       </el-button>
     </div>
 
-    <el-table :data="flatCategories" style="width:100%;max-width:700px" v-loading="loading" border stripe>
-      <el-table-column prop="id" label="ID" width="160" />
-      <el-table-column label="名称">
-        <template #default="{row}">
-          <span :style="{ paddingLeft: (row._level * 24) + 'px' }">{{ row.name }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="sort" label="排序" width="80" />
-      <el-table-column label="操作" width="150">
-        <template #default="{row}">
-          <el-button size="small" @click="showDialog(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="card" style="overflow:hidden;max-width:720px">
+      <el-table :data="flatCategories" style="width:100%" v-loading="loading" stripe>
+        <el-table-column prop="id" label="ID" width="180" />
+        <el-table-column label="名称" min-width="200">
+          <template #default="{row}">
+            <span :style="{ paddingLeft: (row._level * 28) + 'px' }">{{ row.name }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sort" label="排序" width="80" align="center" />
+        <el-table-column label="操作" width="160">
+          <template #default="{row}">
+            <el-button size="small" @click="showDialog(row)">编辑</el-button>
+            <el-button size="small" type="danger" plain @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
-    <el-dialog v-model="dialogVisible" :title="editingCat?.id ? '编辑分类' : '添加分类'" width="400px">
+    <el-dialog v-model="dialogVisible" :title="editingCat?.id ? '编辑分类' : '添加分类'" width="420px">
       <el-form :model="catForm" label-width="80px">
         <el-form-item label="名称">
-          <el-input v-model="catForm.name" />
+          <el-input v-model="catForm.name" placeholder="分类名称" />
         </el-form-item>
         <el-form-item label="父分类">
-          <el-tree-select v-model="catForm.parentId" :data="categoryTree"
+          <el-tree-select
+            v-model="catForm.parentId"
+            :data="categoryTree"
             :props="{ label: 'name', value: 'id', children: 'children' }"
-            placeholder="无（顶级分类）" style="width:100%" check-strictly clearable
+            placeholder="无（顶级分类）"
+            style="width:100%"
+            check-strictly
+            clearable
           />
         </el-form-item>
         <el-form-item label="排序">
@@ -50,9 +57,12 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { getCategoryTree, addCategory, updateCategory, deleteCategory } from '@/api/product'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import PageHeader from '@/components/PageHeader.vue'
 
-const loading = ref(true); const saving = ref(false)
-const dialogVisible = ref(false); const editingCat = ref(null)
+const loading = ref(true)
+const saving = ref(false)
+const dialogVisible = ref(false)
+const editingCat = ref(null)
 const categoryTree = ref([])
 const catForm = reactive({ name: '', parentId: null, sort: 0 })
 
@@ -70,8 +80,12 @@ const flatCategories = computed(() => {
 
 async function fetchData() {
   loading.value = true
-  try { const res = await getCategoryTree(); categoryTree.value = res.data || [] }
-  finally { loading.value = false }
+  try {
+    const res = await getCategoryTree()
+    categoryTree.value = res.data || []
+  } finally {
+    loading.value = false
+  }
 }
 
 function showDialog(cat) {
@@ -94,17 +108,23 @@ async function handleSave() {
     }
     dialogVisible.value = false
     fetchData()
-  } catch {} finally { saving.value = false }
+  } catch {} finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(row) {
   await ElMessageBox.confirm(`确定删除分类「${row.name}」？`, '提示', { type: 'warning' })
-  try { await deleteCategory(row.id); ElMessage.success('删除成功'); fetchData() } catch {}
+  try {
+    await deleteCategory(row.id)
+    ElMessage.success('删除成功')
+    fetchData()
+  } catch {}
 }
 
 onMounted(fetchData)
 </script>
 
 <style scoped>
-.page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.head-flex { flex: 1; }
 </style>
