@@ -44,9 +44,11 @@ CloudFront/
     │   └── MainLayout.vue               # 顶栏 + 侧栏 + 内容 + 底栏 框架
     │
     ├── components/                      # 公共组件
-    │   ├── AppHeader.vue                #   顶栏：Logo + 头像 + 用户下拉菜单 / 登录按钮
-    │   ├── AppSidebar.vue               #   侧栏：按角色条件渲染的 el-menu
+    │   ├── AppHeader.vue                #   顶栏：Logo + 全局搜索 + 购物车角标 + 头像下拉菜单
+    │   ├── AppSidebar.vue               #   侧栏：按角色条件渲染的 el-menu（可收起）
     │   ├── AppFooter.vue                #   底栏
+    │   ├── ProductCard.vue              #   商品卡片：图片 + 名称 + 价格 + 销量 + hover 动画
+    │   ├── PageHeader.vue               #   页面标题栏：返回按钮 + 标题 + 副标题 + 操作槽位
     │   ├── AvatarCropper.vue            #   头像裁剪：拖拽定位 + 缩放 + Canvas 裁剪输出
     │   ├── EmptyState.vue               #   空数据占位（图标 + 描述 + 按钮）
     │   └── LoadingState.vue             #   加载中占位（旋转动画）
@@ -65,11 +67,20 @@ CloudFront/
     │   └── admin/                       #   UserList、ProductReview
     │
     ├── assets/
-    │   └── global.css                   # CSS 变量、重置、工具类
+    │   └── global.css                   # CSS 变量、重置、工具类、按钮体系
     │
     └── utils/
         ├── request.js                   # Axios 实例 + 请求/响应拦截器
         └── auth.js                      # localStorage 读写 Token/用户
+```
+
+### utils/auth.js
+
+```js
+getToken() / setToken(token) / removeToken()     // Token 增删改查
+getUser() / setUser(user) / removeUser()         // 用户对象 JSON 序列化存取
+isLoggedIn()                                     // !!getToken()
+logout()                                         // 清 token + 用户
 ```
 
 ---
@@ -234,7 +245,14 @@ AppHeader 退出按钮
 
 **Actions**：`fetchCart()`、`add()`、`updateQty()`、`toggleCheck()`、`remove()`、`clear()`
 
-每个 action 调用对应 API 后重新 `fetchCart()` 同步状态。`clear()` 额外直接清空本地数组（避免多余请求）。
+| Action | 行为 |
+|---|---|
+| `fetchCart()` | GET 购物车列表 → 赋值 `items`，失败则清空 |
+| `add(productId, qty)` | POST 添加 → 自动 `fetchCart()` 同步 |
+| `updateQty(id, qty)` | PUT 更新数量 → 自动 `fetchCart()` |
+| `toggleCheck(id, checked)` | PUT 切换勾选 → 自动 `fetchCart()`，用于全选/取消全选 |
+| `remove(productId)` | DELETE 移除单个 → 自动 `fetchCart()` |
+| `clear()` | DELETE 清空购物车 → 同时本地 `items = []`，避免额外请求 |
 
 ---
 
@@ -313,12 +331,12 @@ getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo       查�
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  AppHeader (56px, sticky)                             │
-│  Logo(左)                    头像/角色标签/退出(右)     │
+│  AppHeader (58px, sticky)                             │
+│  Logo(左)  全局搜索  购物车角标  头像/下拉菜单(右)     │
 ├──────────────┬───────────────────────────────────────┤
 │ AppSidebar   │  <router-view>                       │
-│ 220px        │  flex: 1, padding: 24px, max-width    │
-│ 可收起至64px  │  1200px, 居中                         │
+│ 230px        │  flex: 1, padding: 28px, max-width    │
+│ 可收起至66px  │  1260px, 居中                         │
 │              │                                       │
 │ el-menu      │  各页面使用 .page-container 工具类      │
 │ router 模式   │                                       │
@@ -331,9 +349,27 @@ getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo       查�
 ```
 
 - `MainLayout.vue`：flex column 全局框架，flex row 分配侧栏+内容
-- 页面过渡：fade + translateY(8px) 动画
-- `AppSidebar`：`activeMenu` 由 `route.path` 的 prefix 匹配决定高亮项
-- 侧栏收起时：`AppSidebar.collapsed = true`（64px），菜单仅显示图标
+- `AppHeader`：sticky 顶栏，58px 高度，毛玻璃背景（backdrop-filter）
+  - Logo 左侧链接到 `/home`
+  - 全局搜索栏（仅登录时显示）：输入关键词 → 回车 → router.push 到 `/product/list?keyword=xxx`
+  - 购物车图标 + 红色角标（购物车为空时隐藏，>99 显示 99+）
+  - 用户头像 + 昵称（过长截断）+ 角色标签（SELLER 蓝色 / ADMIN 红色）
+  - 下拉菜单：个人中心 / 收货地址 / 我的订单 / 退出登录
+  - 未登录状态：显示"登录"和"注册"按钮
+- `AppSidebar`：230px 宽度，可收起至 66px
+  - `activeMenu` 由 `route.path` 的 prefix 匹配决定高亮项
+  - 菜单分组标签：导航（首页/商品/购物车）、个人（订单/中心/地址）、商家（商品管理/分类管理，SELLER/ADMIN 可见）、管理（商品审核/用户管理，仅 ADMIN）
+  - 购物车菜单项右侧显示数量角标（max 99+）
+  - 底部收起/展开按钮（Fold/Expand 图标切换）
+  - 收起时：菜单仅显示图标，分组标签隐藏，角标隐藏
+- 页面过渡：`<transition name="page" mode="out-in">`
+  - enter: opacity 0→1, translateY(6px)→0
+  - leave: opacity 1→0, translateY(0)→(-6px)
+  - 持续时间 150ms
+- 响应式断点：
+  - 1024px：商品网格 4→3 列
+  - 768px：商品网格 3→2 列，筛选栏纵向排列，购物车表格隐藏单价/小计列
+  - 480px：网格全部变为 1 列，page-container padding 缩小
 
 ---
 
@@ -343,8 +379,9 @@ getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo       查�
 
 ```
 Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按钮
-热门商品   → getHotProducts() 获取 Top8 → 4列网格卡片
-           每张卡片：图片(200px) + 名称(单行省略) + 价格 + 销量
+热门商品   → getHotProducts() 获取 Top8 → 4列网格 ProductCard
+           每张卡片：图片(210px) + 名称(单行省略) + 价格 + 销量
+           右上角"查看全部"链接 → /product/list
            点击卡片 → /product/:id
 状态处理   → LoadingState（加载中）/ EmptyState（无商品）
 ```
@@ -353,29 +390,45 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 
 ```
 搜索栏 → 搜索框(支持回车搜索 + 一键清空) + 分类下拉(树形展平)
-        选分类 → @change → search() → 重置 page=1 → fetchProducts()
-商品网格 → 4列，同首页卡片样式
-分页   → el-pagination，切换页码 → fetchProducts()
-状态   → LoadingState / EmptyState
+        排序下拉：默认排序 / 价格从低到高 / 价格从高到低 / 销量优先
+        选分类/排序 → @change → search() → 重置 page=1 → fetchProducts()
+商品网格 → 4列，ProductCard 组件
+分页   → el-pagination，切换页码：
+         初次加载：全屏 LoadingState → 数据就位
+         翻页切换：保留当前商品，半透明过渡(300px)，数据返回后平滑替换
+状态   → LoadingState（初次空状态）/ EmptyState（筛选无结果 + 清除筛选按钮）
 ```
 
 ### 商品详情（ProductDetail.vue）
 
 ```
-左栏 → 商品图片 480×400（el-image + 加载失败占位图标）
-右栏 → 名称 + 描述 + 价格(红色大字) + 库存 + 销量
-        数量选择器(1-99) + 加入购物车按钮 + 立即购买按钮
+左栏 → 商品图片 460×420（el-image + 加载失败占位图标）
+右栏 → 名称 + 描述
+        价格卡片（红色底色）：价格(红色大字 ¥32px) + 库存 + 已售件数
+        数量选择器(1-库存上限) + 库存≤10 时显示"仅剩 N 件"红色提示
+        操作按钮：加入购物车(描边) + 立即购买(实心蓝)
 加入购物车 → 未登录跳 /login → 已登录 cartStore.add() → ElMessage 成功
 立即购买   → 同上 + router.push('/cart')
+加载失败   → EmptyState "商品不存在" + 返回按钮
+响应式     → 900px 以下改为纵向布局，图片宽度 100%
 ```
 
 ### 购物车（Cart.vue）
 
 ```
-表格视图 → 表头/每行：勾选框 | 缩略图(72px) | 商品名 | 单价 | 数量(el-input-number) | 小计 | 删除
-底栏(全选+清空 | 已选N件 合计¥XX | 去结算按钮)
-结算弹窗 → 选择收货地址(select) | 商品清单 | 备注(选填) | 合计金额
-         提交 → createOrder(addressId, remark) → 成功 → 跳转订单详情
+PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
+表格视图 → 表头/每行：勾选框 | 缩略图(72px) | 商品名 | 单价 | 数量(el-input-number) | 小计(price×quantity) | 删除
+         行 hover 变背景色，缩略图和商品名可点击跳转商品详情
+全选     → 顶部勾选框 + 底栏全选复选框，支持半选状态（indeterminate）
+         toggleAll → 遍历 items，逐个调用 toggleCheck
+粘性底栏 → position: sticky; bottom: 16px; 始终可见
+         全选 + 清空购物车 | 已选N件 合计¥XX（红色大字） | 去结算按钮
+结算弹窗 → el-dialog（520px, 不可点击遮罩关闭）
+         收货地址 select（默认选中默认地址，无地址提示"去添加"）
+         商品清单列表（名称 ×数量 + 小计）| 备注(选填)
+         合计金额 | 提交订单按钮（有 loading 状态）
+         提交 → createOrder(addressId, remark) → 成功 → 跳转订单详情（或订单列表）
+响应式   → 768px 以下隐藏单价/小计列，底栏纵向排列
 ```
 
 ### 订单列表（OrderList.vue）
@@ -488,29 +541,102 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 
 ---
 
+## 公共组件
+
+### ProductCard（`components/ProductCard.vue`）
+
+接收 `product` prop，用于首页热门商品网格和商品列表：
+
+```
+┌────────────────────────────┐
+│  商品主图 (el-image, cover)  │ ← 210px 高，加载失败显示图标占位
+│  card-actions 插槽区域       │ ← hover 时从底部渐变淡入
+├────────────────────────────┤
+│  商品名称(单行省略)          │
+│  ¥价格(红色大字)    已售 N件  │
+└────────────────────────────┘
+```
+
+- hover 动画：卡片上移 4px + 边框变蓝 + 阴影放大 + 图片 scale(1.05)
+- `card-actions` slot：可插入操作按钮，点击不冒泡
+
+### PageHeader（`components/PageHeader.vue`）
+
+用于购物车、订单列表等页面的标题栏：
+
+```js
+props: {
+  title: String (必填),           // 主标题
+  subtitle: String (可选),        // 副标题，灰色小字
+  showBack: Boolean (默认 false), // 显示返回按钮
+  backTo: String | Object (可选)   // 返回路径，不传则 router.back()
+}
+# actions slot：右侧操作区域
+```
+
+---
+
 ## CSS 变量体系（`assets/global.css`）
+
+### Design Tokens
 
 ```css
 :root {
-  --primary: #5b7cfa;          /* 主题蓝 */
-  --primary-light: #eef1ff;    /* 主题浅底 */
-  --primary-dark: #4a63d4;     /* 主题深色 */
-  --danger: #e8595b;           /* 危险红（价格/删除） */
-  --danger-light: #fef0f0;     /* 危险浅底 */
-  --success: #52c41a;          /* 成功绿 */
-  --warning: #fa9d3f;          /* 警告橙 */
-  --text: #1f2937;             /* 主文字 */
-  --text-secondary: #6b7280;   /* 次要文字 */
-  --text-muted: #9ca3af;       /* 弱化文字 */
-  --bg: #f8f9fb;               /* 页面背景 */
-  --bg-card: #ffffff;          /* 卡片背景 */
-  --border: #eaecf0;           /* 边框 */
-  --radius: 8px;               /* 圆角 */
-  --radius-lg: 12px;           /* 大圆角 */
+  /* 品牌色 */
+  --primary: #4f6ef5;            /* 主题蓝 */
+  --primary-light: #eff2ff;      /* 主题浅底 */
+  --primary-dark: #3b54d4;       /* 主题深色 */
+  --primary-gradient: linear-gradient(135deg, #4f6ef5, #6c5ce7);
+
+  /* 语义色 */
+  --danger: #e8595b;             /* 危险红（价格/删除） */
+  --danger-light: #fef2f2;       /* 危险浅底 */
+  --danger-dark: #d94a4c;
+  --success: #22c55e;            /* 成功绿 */
+  --success-light: #f0fdf6;
+  --warning: #f59e0b;            /* 警告橙 */
+  --warning-light: #fffbeb;
+
+  /* 文字 */
+  --text: #1a1a2e;               /* 主文字 */
+  --text-secondary: #5a5a7a;     /* 次要文字 */
+  --text-muted: #9c9cb8;         /* 弱化文字 */
+
+  /* 背景 */
+  --bg: #f5f6fa;                 /* 页面背景 */
+  --bg-card: #ffffff;            /* 卡片背景 */
+  --bg-hover: #f8f9fc;           /* hover 背景 */
+
+  /* 边框 / 阴影 */
+  --border: #e8e8f0;
+  --border-light: #f0f0f5;
+  --shadow-xs / --shadow-sm / --shadow / --shadow-md / --shadow-lg
+
+  /* 圆角 */
+  --radius-sm: 6px; --radius: 10px; --radius-lg: 14px;
+  --radius-xl: 20px; --radius-full: 9999px;
+
+  /* 过渡 */
+  --transition-fast: .15s ease;
+  --transition: .2s ease;
+  --transition-slow: .3s cubic-bezier(.4,0,.2,1);
 }
 ```
 
-工具类：`.page-container`（padding 24px, max-width 1200px, margin 0 auto）、`.page-title`（20px bold）
+### 工具类
+
+| 类名 | 用途 |
+|---|---|
+| `.page-container` | padding 28px 32px, max-width 1260px, margin 0 auto |
+| `.page-title` | 20px bold, letter-spacing -.3px |
+| `.card` | 白色背景 + 边框 + 圆角，hover 变蓝色边框 + 阴影 |
+| `.btn` / `.btn-primary` / `.btn-danger` / `.btn-ghost` / `.btn-outline-danger` | 按钮体系 |
+| `.btn-sm` / `.btn-lg` | 按钮尺寸变体 |
+| `.badge` | 圆角胶囊标签 |
+| `.text-muted` / `.text-secondary` / `.text-danger` / `.text-primary` / `.text-success` | 文字颜色 |
+| `.truncate` | 单行省略（overflow + text-overflow + nowrap） |
+| `.grid-2` / `.grid-3` / `.grid-4` | 响应式网格（自动适配断点） |
+| `.mt-1`~`.mt-3` / `.mb-1`~`.mb-3` | 间距工具类 |
 
 ---
 
