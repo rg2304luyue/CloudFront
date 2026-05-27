@@ -29,12 +29,12 @@
       </div>
     </div>
 
-    <!-- States -->
-    <LoadingState v-if="loading" />
-    <EmptyState v-else-if="products.length === 0" description="没有找到商品，试试其他关键词" show-action @action="keyword='';categoryId=null;search()" action-text="清除筛选" />
+    <!-- States (only show full-page loading on initial load) -->
+    <LoadingState v-if="loading && products.length === 0" />
+    <EmptyState v-else-if="!loading && products.length === 0" description="没有找到商品，试试其他关键词" show-action @action="keyword='';categoryId=null;search()" action-text="清除筛选" />
 
     <!-- Product Grid -->
-    <div v-else class="product-grid">
+    <div v-else class="product-grid" :class="{ 'is-switching': switchingPage }">
       <ProductCard v-for="p in products" :key="p.id" :product="p" />
     </div>
 
@@ -63,6 +63,7 @@ const route = useRoute()
 
 const products = ref([])
 const loading = ref(true)
+const switchingPage = ref(false)
 const total = ref(0)
 const page = ref(1)
 const size = ref(12)
@@ -100,7 +101,11 @@ async function loadCategories() {
 }
 
 async function fetchProducts() {
-  loading.value = true
+  if (products.value.length === 0) {
+    loading.value = true
+  } else {
+    switchingPage.value = true
+  }
   try {
     const params = {
       categoryId: categoryId.value,
@@ -114,6 +119,7 @@ async function fetchProducts() {
     total.value = r.total || 0
   } finally {
     loading.value = false
+    switchingPage.value = false
   }
 }
 
@@ -174,6 +180,11 @@ function search() {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 18px;
+  transition: opacity 0.15s ease;
+}
+.product-grid.is-switching {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .pagination-wrap {
