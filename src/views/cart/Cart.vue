@@ -179,7 +179,7 @@ async function submitOrder() {
     const res = await createOrder(selectedAddressId.value, remark.value)
     ElMessage.success('下单成功')
     dialogVisible.value = false
-    const orderId = res.data?.id || res.data?.order?.id
+    const orderId = res.data?.id
     router.push(orderId ? `/order/${orderId}` : '/order/list')
   } catch {} finally {
     submitting.value = false

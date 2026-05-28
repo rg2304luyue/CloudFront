@@ -70,7 +70,7 @@ async function fetchProducts() {
   try {
     const res = await getMyProducts({ page: page.value, size: size.value })
     products.value = res.data || []
-    total.value = Math.max((res.data || []).length, page.value * size.value + 1)
+    total.value = res.total || 0
   } finally {
     loading.value = false
   }
@@ -80,7 +80,7 @@ async function fetchProductsSilent() {
   try {
     const res = await getMyProducts({ page: page.value, size: size.value })
     products.value = res.data || []
-    total.value = Math.max((res.data || []).length, page.value * size.value + 1)
+    total.value = res.total || 0
   } catch {}
 }
 
