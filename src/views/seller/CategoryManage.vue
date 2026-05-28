@@ -100,7 +100,7 @@ async function handleSave() {
   saving.value = true
   try {
     if (editingCat.value?.id) {
-      await updateCategory({ id: editingCat.value.id, ...catForm })
+      await updateCategory(editingCat.value.id, { ...catForm })
       ElMessage.success('更新成功')
     } else {
       await addCategory(catForm)

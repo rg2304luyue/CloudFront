@@ -125,7 +125,7 @@ async function handleSave() {
   const v = await formRef.value.validate().catch(() => false)
   if (!v) return
   if (editingAddr.value?.id) {
-    await updateAddress({ ...form, id: editingAddr.value.id })
+    await updateAddress(editingAddr.value.id, { ...form })
   } else {
     await addAddress(form)
   }

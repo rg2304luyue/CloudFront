@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 export function getCartList() {
-  return request.get('/cart/list')
+  return request.get('/cart')
 }
 
 export function getCheckedItems() {
@@ -9,21 +9,21 @@ export function getCheckedItems() {
 }
 
 export function addToCart(productId, quantity = 1) {
-  return request.post('/cart/add', null, { params: { productId, quantity } })
+  return request.post('/cart/items', { productId, quantity })
 }
 
 export function updateQuantity(productId, quantity) {
-  return request.put('/cart/quantity', null, { params: { productId, quantity } })
+  return request.patch(`/cart/items/${productId}`, { quantity })
 }
 
 export function checkItem(productId, checked) {
-  return request.put('/cart/check', null, { params: { productId, checked } })
+  return request.patch(`/cart/items/${productId}/check`, { checked })
 }
 
 export function removeFromCart(productId) {
-  return request.delete(`/cart/${productId}`)
+  return request.delete(`/cart/items/${productId}`)
 }
 
 export function clearCart() {
-  return request.delete('/cart/clear')
+  return request.delete('/cart/items')
 }

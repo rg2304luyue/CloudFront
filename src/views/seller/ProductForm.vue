@@ -145,7 +145,7 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value) {
-      await updateProduct({ id: route.params.id, ...form })
+      await updateProduct(route.params.id, { ...form })
       ElMessage.success('更新成功')
     } else {
       await addProduct(form)

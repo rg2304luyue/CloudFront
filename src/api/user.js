@@ -1,57 +1,67 @@
 import request from '@/utils/request'
 
+// ===== 当前用户 =====
+
 export function getUserInfo() {
-  return request.get('/user/info')
+  return request.get('/users/me')
 }
 
-export function updateUserInfo(params) {
-  return request.put('/user/info', null, { params })
+export function updateUserInfo(data) {
+  return request.patch('/users/me', data)
 }
+
+// ===== 地址 =====
 
 export function getAddressList() {
-  return request.get('/user/address')
+  return request.get('/users/me/addresses')
 }
 
 export function getAddressById(addressId) {
-  return request.get(`/user/address/${addressId}`)
+  return request.get(`/users/me/addresses/${addressId}`)
 }
 
 export function addAddress(data) {
-  return request.post('/user/address', data)
+  return request.post('/users/me/addresses', data)
 }
 
-export function updateAddress(data) {
-  return request.put('/user/address', data)
+export function updateAddress(addressId, data) {
+  return request.put(`/users/me/addresses/${addressId}`, data)
 }
 
 export function deleteAddress(addressId) {
-  return request.delete(`/user/address/${addressId}`)
+  return request.delete(`/users/me/addresses/${addressId}`)
 }
 
-export function getUserList() {
-  return request.get('/user/admin/list')
-}
-
-export function resetPassword(targetUserId, newPassword) {
-  return request.put('/user/admin/reset-password', null, { params: { targetUserId, newPassword } })
-}
+// ===== 卖家申请 =====
 
 export function applySeller() {
-  return request.post('/user/apply-seller')
+  return request.post('/users/me/apply-seller')
 }
+
+// ===== 头像 =====
 
 export function uploadAvatar(file) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post('/user/avatar/upload', formData, {
+  return request.post('/users/me/avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
+// ===== 管理员（URL 移到了 /admin 下） ====
+
+export function getUserList() {
+  return request.get('/admin/users')
+}
+
+export function resetPassword(targetUserId, newPassword) {
+  return request.put(`/admin/users/${targetUserId}/password`, { newPassword })
+}
+
 export function getApplications() {
-  return request.get('/user/admin/applications')
+  return request.get('/admin/applications')
 }
 
 export function processApplication(id, approved) {
-  return request.put(`/user/admin/applications/${id}`, null, { params: { approved } })
+  return request.patch(`/admin/applications/${id}`, { approved })
 }

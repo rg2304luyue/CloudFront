@@ -94,7 +94,7 @@ logout()                                         // 清 token + 用户
 | `/home` | Home.vue | 否 | — | Hero Banner + 热门商品 |
 | `/product/list` | ProductList.vue | 否 | — | 搜索框 + 分类下拉 + 分页网格 |
 | `/product/:id` | ProductDetail.vue | 否 | — | 商品详情 + 加入购物车 |
-| `/login` | Login.vue | 否 | — | 独立布局，按角色跳转 |
+| `/login` | Login.vue | 否 | — | 独立布局，登录后统一跳转首页 |
 | `/register` | Register.vue | 否 | — | 独立布局 |
 | `/cart` | Cart.vue | 是 | — | 购物车表格 + 下单弹窗 |
 | `/order/list` | OrderList.vue | 是 | — | 订单卡片列表 |
@@ -142,10 +142,7 @@ Login.vue 提交表单
     → GET /api/cart/list → 初始化购物车
   → 路由跳转
     → ?redirect 参数存在 → 跳回原页面
-    → 否则按角色：
-      ADMIN  → /admin/users
-      SELLER → /seller/products
-      BUYER  → /home
+    → 否则统一跳转到 /home
 ```
 
 ### 注册
@@ -262,67 +259,68 @@ AppHeader 退出按钮
 
 ### auth.js
 ```js
-login(username, password)              // POST /api/auth/login?username&password
-register(username, password, nickname) // POST /api/auth/register?username&password&nickname
+login(username, password)              // POST /api/auth/login (JSON body: {username, password})
+register(username, password, nickname) // POST /api/auth/register (JSON body: {username, password, nickname})
 ```
 
 ### user.js
 ```js
-getUserInfo()                          // GET /api/user/info
-updateUserInfo(params)                 // PUT /api/user/info?nickname&phone&email
-getAddressList()                       // GET /api/user/address
-addAddress(data)                       // POST /api/user/address
-updateAddress(data)                    // PUT /api/user/address
-deleteAddress(id)                      // DELETE /api/user/address/:id
-getUserList()                          // GET /api/user/admin/list
-resetPassword(id, password)            // PUT /api/user/admin/reset-password
-applySeller()                          // POST /api/user/apply-seller
-getApplications()                      // GET /api/user/admin/applications
-processApplication(id, approved)       // PUT /api/user/admin/applications/:id
-uploadAvatar(file)                     // POST /api/user/avatar/upload (FormData)
+getUserInfo()                          // GET /api/users/me
+updateUserInfo(data)                   // PATCH /api/users/me (JSON body)
+getAddressList()                       // GET /api/users/me/addresses
+getAddressById(id)                     // GET /api/users/me/addresses/:id
+addAddress(data)                       // POST /api/users/me/addresses
+updateAddress(id, data)                // PUT /api/users/me/addresses/:id
+deleteAddress(id)                      // DELETE /api/users/me/addresses/:id
+getUserList()                          // GET /api/admin/users
+resetPassword(id, newPassword)         // PUT /api/admin/users/:id/password (JSON body)
+applySeller()                          // POST /api/users/me/apply-seller
+getApplications()                      // GET /api/admin/applications
+processApplication(id, approved)       // PATCH /api/admin/applications/:id (JSON body)
+uploadAvatar(file)                     // POST /api/users/me/avatar (FormData)
 ```
 
 ### product.js
 ```js
-getCategoryTree()                      // GET /api/product/category
-addCategory(data)                      // POST /api/product/category
-updateCategory(data)                   // PUT /api/product/category
-deleteCategory(id)                     // DELETE /api/product/category/:id
-getProductDetail(id)                   // GET /api/product/detail/:id
-getProductList({ categoryId, page, size, keyword })  // GET /api/product/list
-getHotProducts()                       // GET /api/product/hot
-getMyProducts({ page, size })          // GET /api/product/my-list
-addProduct(data)                       // POST /api/product
-updateProduct(data)                    // PUT /api/product
-deleteProduct(id)                      // DELETE /api/product/:id
-getPendingProducts({ page, size })     // GET /api/product/admin/pending
-reviewProduct(id, approved)            // PUT /api/product/admin/review/:id
-uploadImage(file)                      // POST /api/product/upload (FormData)
+getCategoryTree()                      // GET /api/categories
+addCategory(data)                      // POST /api/categories
+updateCategory(id, data)               // PUT /api/categories/:id
+deleteCategory(id)                     // DELETE /api/categories/:id
+getProductDetail(id)                   // GET /api/products/:id
+getProductList({ categoryId, page, size, keyword })  // GET /api/products
+getHotProducts()                       // GET /api/products/hot
+getMyProducts({ page, size })          // GET /api/seller/products/mine
+addProduct(data)                       // POST /api/seller/products
+updateProduct(id, data)                // PUT /api/seller/products/:id
+deleteProduct(id)                      // DELETE /api/seller/products/:id
+getPendingProducts({ page, size })     // GET /api/admin/products/pending
+reviewProduct(id, approved)            // PATCH /api/admin/products/:id/review (JSON body)
+uploadImage(file)                      // POST /api/products/upload (FormData)
 ```
 
 ### cart.js
 ```js
-getCartList()                          // GET /api/cart/list
+getCartList()                          // GET /api/cart
 getCheckedItems()                      // GET /api/cart/checked
-addToCart(productId, quantity)         // POST /api/cart/add
-updateQuantity(productId, quantity)    // PUT /api/cart/quantity
-checkItem(productId, checked)          // PUT /api/cart/check
-removeFromCart(productId)              // DELETE /api/cart/:productId
-clearCart()                            // DELETE /api/cart/clear
+addToCart(productId, quantity)         // POST /api/cart/items (JSON body)
+updateQuantity(productId, quantity)    // PATCH /api/cart/items/:productId (JSON body)
+checkItem(productId, checked)          // PATCH /api/cart/items/:productId/check (JSON body)
+removeFromCart(productId)              // DELETE /api/cart/items/:productId
+clearCart()                            // DELETE /api/cart/items
 ```
 
 ### order.js
 ```js
-createOrder(addressId, remark)         // POST /api/order/create
-getOrderDetail(id)                     // GET /api/order/detail/:id
-getOrderList({ page, size })           // GET /api/order/list
-cancelOrder(id)                        // PUT /api/order/cancel/:id
+createOrder(addressId, remark)         // POST /api/orders (JSON body: {addressId, remark})
+getOrderDetail(id)                     // GET /api/orders/:id
+getOrderList({ page, size })           // GET /api/orders
+cancelOrder(id)                        // POST /api/orders/:id/cancel
 ```
 
 ### payment.js
 ```js
-createAlipayPayment(orderNo)             // POST /api/payment/pay/:orderNo  返回支付表单HTML
-getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo       查询支付记录
+createAlipayPayment(orderNo)             // POST /api/payment/pay (JSON body: {orderNo, method})
+getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo
 ```
 
 ---
@@ -449,6 +447,7 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 详情卡片 → 2列网格：
   订单号 / 创建时间 / 总金额 / 支付时间
   收货人 / 联系电话 / 收货地址 / 备注
+  后端一同返回订单明细列表（orderItems），后续可展示购买的商品清单
 待支付状态显示"立即支付"按钮 + 返回按钮
 ```
 
@@ -490,6 +489,7 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 操作 → 添加(链接到表单) | 编辑 | 删除(确认)
 状态 → 上架(green) / 下架(red) / 审核中(orange)
 自动刷新 → 每 30s 静默拉取最新商品状态（无需手动刷新即可看到审核结果）
+分页     → 后端返回真实 total，分页器可正确显示总页数
 ```
 
 ### 商品表单（ProductForm.vue）
