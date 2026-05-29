@@ -65,7 +65,7 @@ async function fetchData() {
   try {
     const res = await getPendingProducts({ page: page.value, size: size.value })
     products.value = res.data || []
-    total.value = (res.data || []).length
+    total.value = res.total || 0
   } finally {
     loading.value = false
   }
@@ -75,7 +75,7 @@ async function fetchDataSilent() {
   try {
     const res = await getPendingProducts({ page: page.value, size: size.value })
     products.value = res.data || []
-    total.value = (res.data || []).length
+    total.value = res.total || 0
   } catch {}
 }
 

@@ -97,17 +97,17 @@ onMounted(async () => {
   }
 })
 
-function addToCart() {
+async function addToCart() {
   if (!userStore.isLogin) {
     router.push('/login')
     return
   }
-  cartStore.add(product.value.id, quantity.value)
+  await cartStore.add(product.value.id, quantity.value)
   ElMessage.success('已添加到购物车')
 }
 
-function buyNow() {
-  addToCart()
+async function buyNow() {
+  await addToCart()
   router.push('/cart')
 }
 </script>

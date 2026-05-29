@@ -279,8 +279,8 @@ addAddress(data)                       // POST /api/users/me/addresses
 updateAddress(id, data)                // PUT /api/users/me/addresses/:id
 deleteAddress(id)                      // DELETE /api/users/me/addresses/:id
 getUserList()                          // GET /api/admin/users
-resetPassword(id, newPassword)         // PUT /api/admin/users/:id/password (JSON body)
-applySeller()                          // POST /api/users/me/apply-seller
+resetPassword(id, newPassword)         // PATCH /api/admin/users/:id/password (JSON body)
+applySeller()                          // POST /api/users/me/seller-applications
 getApplications()                      // GET /api/admin/applications
 processApplication(id, approved)       // PATCH /api/admin/applications/:id (JSON body)
 uploadAvatar(file)                     // POST /api/users/me/avatar (FormData)
@@ -320,18 +320,19 @@ clearCart()                            // DELETE /api/cart/items
 
 ### order.js
 ```js
-createOrder(addressId, remark)         // POST /api/orders (JSON body: {addressId, remark})
+createOrder(addressId, remark, orderToken) // POST /api/orders (JSON body: {addressId, remark, orderToken})
 getOrderDetail(id)                     // GET /api/orders/:id
 getOrderList({ page, size })           // GET /api/orders
-cancelOrder(id)                        // POST /api/orders/:id/cancel
-receiveOrder(id)                       // POST /api/orders/:id/confirm-receive
+cancelOrder(id)                        // PATCH /api/orders/:id/cancel
+receiveOrder(id)                       // PATCH /api/orders/:id/receive
 getSellerOrders({ page, size })        // GET /api/seller/orders
-shipOrder(id)                          // PUT /api/seller/orders/:id/ship
+shipOrder(id)                          // PATCH /api/seller/orders/:id/ship
+getOrderToken()                        // GET /api/orders/token
 ```
 
 ### payment.js
 ```js
-createAlipayPayment(orderNo)             // POST /api/payment/pay (JSON body: {orderNo, method})
+createAlipayPayment(orderNo)             // POST /api/payment/alipay (JSON body: {orderNo})
 getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo
 ```
 
@@ -438,7 +439,7 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
          收货地址 select（默认选中默认地址，无地址提示"去添加"）
          商品清单列表（名称 ×数量 + 小计）| 备注(选填)
          合计金额 | 提交订单按钮（有 loading 状态）
-         提交 → createOrder(addressId, remark) → 成功 → 跳转订单详情（或订单列表）
+         提交 → getOrderToken() → createOrder(addressId, remark, orderToken) → 成功 → 跳转订单详情（或订单列表）
 响应式   → 768px 以下隐藏单价/小计列，底栏纵向排列
 ```
 

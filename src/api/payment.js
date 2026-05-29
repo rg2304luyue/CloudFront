@@ -7,5 +7,5 @@ export function getPaymentByOrderNo(orderNo) {
 
 /** 发起支付宝页面支付，返回支付表单 HTML */
 export function createAlipayPayment(orderNo) {
-  return request.post(`/payment/pay`, { orderNo, method: 'ALIPAY' })
+  return request.post(`/payment/alipay`, { orderNo, method: 'ALIPAY' })
 }

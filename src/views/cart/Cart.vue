@@ -127,7 +127,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { getAddressList } from '@/api/user'
-import { createOrder } from '@/api/order'
+import { createOrder, getOrderToken } from '@/api/order'
 import { ElMessage } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -142,6 +142,7 @@ const submitting = ref(false)
 const addresses = ref([])
 const selectedAddressId = ref(null)
 const remark = ref('')
+const orderToken = ref('')
 
 const checkAll = computed({
   get: () => cartStore.items.length > 0 && cartStore.items.every(i => i.checked),
@@ -170,18 +171,31 @@ async function openCheckout() {
   } catch {
     addresses.value = []
   }
+  try {
+    const tokenRes = await getOrderToken()
+    orderToken.value = tokenRes.data
+  } catch {
+    ElMessage.error('获取下单令牌失败')
+    return
+  }
   dialogVisible.value = true
 }
 
 async function submitOrder() {
   submitting.value = true
   try {
-    const res = await createOrder(selectedAddressId.value, remark.value)
+    const res = await createOrder(selectedAddressId.value, remark.value, orderToken.value)
     ElMessage.success('下单成功')
     dialogVisible.value = false
     const orderId = res.data?.id
     router.push(orderId ? `/order/${orderId}` : '/order/list')
-  } catch {} finally {
+  } catch {
+    // 下单失败，token 已被消费，重新获取为下次准备
+    try {
+      const tokenRes = await getOrderToken()
+      orderToken.value = tokenRes.data
+    } catch {}
+  } finally {
     submitting.value = false
   }
 }

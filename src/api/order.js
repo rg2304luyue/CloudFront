@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
-export function createOrder(addressId, remark) {
-  return request.post('/orders', { addressId, remark })
+export function createOrder(addressId, remark, orderToken) {
+  return request.post('/orders', { addressId, remark, orderToken })
 }
 
 export function getOrderDetail(id) {
@@ -13,7 +13,7 @@ export function getOrderList(params) {
 }
 
 export function cancelOrder(id) {
-  return request.post(`/orders/${id}/cancel`)
+  return request.patch(`/orders/${id}/cancel`)
 }
 
 // ===== 卖家订单 =====
@@ -23,9 +23,13 @@ export function getSellerOrders(params) {
 }
 
 export function shipOrder(id) {
-  return request.put(`/seller/orders/${id}/ship`)
+  return request.patch(`/seller/orders/${id}/ship`)
 }
 
 export function receiveOrder(id) {
-  return request.post(`/orders/${id}/receive`)
+  return request.patch(`/orders/${id}/receive`)
+}
+
+export function getOrderToken() {
+  return request.get('/orders/token')
 }

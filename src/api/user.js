@@ -35,7 +35,7 @@ export function deleteAddress(addressId) {
 // ===== 卖家申请 =====
 
 export function applySeller() {
-  return request.post('/users/me/apply-seller')
+  return request.post('/users/me/seller-applications')
 }
 
 // ===== 头像 =====
@@ -55,7 +55,7 @@ export function getUserList() {
 }
 
 export function resetPassword(targetUserId, newPassword) {
-  return request.put(`/admin/users/${targetUserId}/password`, { newPassword })
+  return request.patch(`/admin/users/${targetUserId}/password`, { newPassword })
 }
 
 export function getApplications() {
