@@ -48,14 +48,14 @@
         <el-form-item label="电话" prop="phone">
           <el-input v-model="form.phone" placeholder="请输入联系电话" />
         </el-form-item>
-        <el-form-item label="省份" prop="province">
-          <el-input v-model="form.province" placeholder="如：广东省" />
-        </el-form-item>
-        <el-form-item label="城市" prop="city">
-          <el-input v-model="form.city" placeholder="如：深圳市" />
-        </el-form-item>
-        <el-form-item label="区/县" prop="district">
-          <el-input v-model="form.district" placeholder="如：南山区" />
+        <el-form-item label="所在地区" prop="region">
+          <el-cascader
+            v-model="regionValues"
+            :options="regionData"
+            placeholder="请选择省 / 市 / 区"
+            style="width: 100%"
+            @change="onRegionChange"
+          />
         </el-form-item>
         <el-form-item label="详细地址" prop="detail">
           <el-input v-model="form.detail" placeholder="街道、门牌号等" />
@@ -79,6 +79,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import regionData from '@/data/regions.json'
 
 const addresses = ref([])
 const loading = ref(true)
@@ -88,15 +89,25 @@ const formRef = ref(null)
 
 const form = reactive({
   receiverName: '', phone: '', province: '', city: '',
-  district: '', detail: '', isDefault: 0
+  district: '', detail: '', isDefault: 0, region: ''
 })
+
+const regionValues = ref([])
+const regionOptions = regionData
+
+function onRegionChange(values) {
+  if (values && values.length === 3) {
+    form.province = values[0]
+    form.city = values[1]
+    form.district = values[2]
+    form.region = values.join('/')
+  }
+}
 
 const rules = {
   receiverName: [{ required: true, message: '请输入收货人', trigger: 'blur' }],
   phone: [{ required: true, message: '请输入电话', trigger: 'blur' }],
-  province: [{ required: true, message: '请输入省份', trigger: 'blur' }],
-  city: [{ required: true, message: '请输入城市', trigger: 'blur' }],
-  district: [{ required: true, message: '请输入区/县', trigger: 'blur' }],
+  region: [{ required: true, message: '请选择所在地区', trigger: 'change' }],
   detail: [{ required: true, message: '请输入详细地址', trigger: 'blur' }]
 }
 
@@ -116,12 +127,23 @@ function openDialog(addr) {
   editingAddr.value = addr
   Object.assign(form, addr || {
     receiverName: '', phone: '', province: '', city: '',
-    district: '', detail: '', isDefault: 0
+    district: '', detail: '', isDefault: 0, region: ''
   })
+  if (addr?.province) {
+    regionValues.value = [addr.province, addr.city, addr.district]
+    form.region = [addr.province, addr.city, addr.district].join('/')
+  } else {
+    regionValues.value = []
+    form.region = ''
+  }
   dialogVisible.value = true
 }
 
 async function handleSave() {
+  if (!regionValues.value || regionValues.value.length !== 3) {
+    ElMessage.warning('请选择所在地区')
+    return
+  }
   const v = await formRef.value.validate().catch(() => false)
   if (!v) return
   if (editingAddr.value?.id) {

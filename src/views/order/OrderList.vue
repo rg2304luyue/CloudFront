@@ -34,9 +34,10 @@
           </div>
         </div>
 
-        <div class="order-foot" v-if="order.status === 0">
-          <button class="btn btn-danger" @click.stop="handlePay(order.orderNo)">立即支付</button>
-          <button class="btn btn-ghost" @click.stop="handleCancel(order.id)">取消订单</button>
+        <div class="order-foot">
+          <button v-if="order.status === 0" class="btn btn-danger" @click.stop="handlePay(order.orderNo)">立即支付</button>
+          <button v-if="order.status === 0" class="btn btn-ghost" @click.stop="handleCancel(order.id)">取消订单</button>
+          <button v-if="order.status === 2" class="btn btn-primary" @click.stop="handleReceive(order.id)">确认收货</button>
         </div>
       </div>
     </div>
@@ -56,7 +57,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getOrderList, cancelOrder } from '@/api/order'
+import { getOrderList, cancelOrder, receiveOrder } from '@/api/order'
 import { createAlipayPayment } from '@/api/payment'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
@@ -110,6 +111,16 @@ function handlePay(orderNo) {
       w.document.close()
     }
   }).catch(() => {})
+}
+
+function handleReceive(id) {
+  ElMessageBox.confirm('请确认已经收到商品', '确认收货', { type: 'info' })
+    .then(async () => {
+      await receiveOrder(id)
+      ElMessage.success('已确认收货')
+      fetchOrders()
+    })
+    .catch(() => {})
 }
 </script>
 

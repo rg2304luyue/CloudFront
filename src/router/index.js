@@ -37,6 +37,11 @@ const routes = [
         meta: { title: '分类管理', requireAuth: true, roles: ['SELLER', 'ADMIN'] }
       },
       {
+        path: 'seller/orders', name: 'SellerOrders',
+        component: () => import('@/views/seller/SellerOrderManage.vue'),
+        meta: { title: '订单管理', requireAuth: true, roles: ['SELLER', 'ADMIN'] }
+      },
+      {
         path: 'admin/users', name: 'AdminUsers',
         component: () => import('@/views/admin/UserList.vue'),
         meta: { title: '用户管理', requireAuth: true, roles: ['ADMIN'] }

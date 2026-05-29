@@ -52,6 +52,10 @@
       <div class="action-row" v-if="order.status === 0">
         <button class="btn btn-danger btn-lg" @click="handlePay(order.orderNo)">立即支付</button>
       </div>
+
+      <div class="action-row" v-if="order.status === 2">
+        <button class="btn btn-primary btn-lg" @click="handleReceive(order.id)">确认收货</button>
+      </div>
     </div>
 
     <EmptyState v-else description="订单不存在" @action="$router.back()" action-text="返回" />
@@ -61,9 +65,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getOrderDetail } from '@/api/order'
+import { getOrderDetail, receiveOrder } from '@/api/order'
 import { createAlipayPayment } from '@/api/payment'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -99,6 +103,17 @@ function handlePay(orderNo) {
       w.document.close()
     }
   }).catch(() => {})
+}
+
+function handleReceive(id) {
+  ElMessageBox.confirm('请确认已经收到商品', '确认收货', { type: 'info' })
+    .then(async () => {
+      await receiveOrder(id)
+      ElMessage.success('已确认收货')
+      const r = await getOrderDetail(route.params.id)
+      order.value = r.data
+    })
+    .catch(() => {})
 }
 </script>
 

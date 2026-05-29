@@ -15,3 +15,17 @@ export function getOrderList(params) {
 export function cancelOrder(id) {
   return request.post(`/orders/${id}/cancel`)
 }
+
+// ===== 卖家订单 =====
+
+export function getSellerOrders(params) {
+  return request.get('/seller/orders', { params })
+}
+
+export function shipOrder(id) {
+  return request.put(`/seller/orders/${id}/ship`)
+}
+
+export function receiveOrder(id) {
+  return request.post(`/orders/${id}/receive`)
+}

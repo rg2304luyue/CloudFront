@@ -47,6 +47,10 @@
           <el-icon><Collection /></el-icon>
           <span>分类管理</span>
         </el-menu-item>
+                <el-menu-item index="/seller/orders">
+          <el-icon><List /></el-icon>
+          <span>订单管理</span>
+        </el-menu-item>
       </template>
 
       <template v-if="userStore.isAdmin">
@@ -92,6 +96,7 @@ const activeMenu = computed(() => {
   if (p.startsWith('/seller/categories')) return '/seller/categories'
   if (p.startsWith('/admin/review')) return '/admin/review'
   if (p.startsWith('/admin/users')) return '/admin/users'
+  if (p.startsWith('/seller/orders')) return '/seller/orders'
   return '/home'
 })
 </script>

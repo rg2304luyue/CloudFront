@@ -30,7 +30,7 @@ CloudFront/
     │   ├── user.js                      #   个人信息 / 地址 / 管理员接口
     │   ├── product.js                   #   商品 CRUD / 分类 / 热门 / 审核
     │   ├── cart.js                      #   购物车 CRUD
-    │   ├── order.js                     #   订单创建 / 查询 / 取消
+    │   ├── order.js                     #   订单创建 / 查询 / 取消 / 确认收货 / 卖家订单
     │   └── payment.js                   #   支付记录查询
     │
     ├── stores/                          # Pinia 状态管理
@@ -38,7 +38,7 @@ CloudFront/
     │   └── cart.js                      #   购物车列表、勾选统计
     │
     ├── router/
-    │   └── index.js                     # 18 条路由 + 登录守卫 + 角色守卫
+    │   └── index.js                     # 21 条路由 + 登录守卫 + 角色守卫
     │
     ├── layout/
     │   └── MainLayout.vue               # 顶栏 + 侧栏 + 内容 + 底栏 框架
@@ -62,12 +62,15 @@ CloudFront/
     │   ├── cart/                        #   Cart（表格 + 结算弹窗）
     │   ├── order/                       #   OrderList、OrderDetail
     │   ├── payment/                     #   PaymentResult
-    │   ├── user/                        #   UserInfo、Address
-    │   ├── seller/                      #   ProductManage、ProductForm、CategoryManage
-    │   └── admin/                       #   UserList、ProductReview
+    │   ├── user/                        #   UserInfo、Address、BrowseHistory
+    │   ├── seller/                      #   ProductManage、ProductForm、CategoryManage、SellerOrderManage
+    │   └── admin/                       #   UserList、ProductReview、AdminDashboard
     │
     ├── assets/
     │   └── global.css                   # CSS 变量、重置、工具类、按钮体系
+    │
+    ├── data/
+    │   └── regions.json                 # 中国省市区三级数据（供 el-cascader 使用）
     │
     └── utils/
         ├── request.js                   # Axios 实例 + 请求/响应拦截器
@@ -87,7 +90,7 @@ logout()                                         // 清 token + 用户
 
 ## 路由表
 
-18 条路由，`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
+21 条路由，`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
 
 | 路径 | 页面 | 认证 | 角色限制 | 说明 |
 |---|---|---|---|---|
@@ -101,11 +104,14 @@ logout()                                         // 清 token + 用户
 | `/order/:id` | OrderDetail.vue | 是 | — | 订单详情 + 立即支付按钮 |
 | `/payment/result` | PaymentResult.vue | 是 | — | 支付结果（成功/处理中/失败） |
 | `/user/info` | UserInfo.vue | 是 | — | 个人信息 + 申请卖家 |
-| `/user/address` | Address.vue | 是 | — | 地址 CRUD |
+| `/user/address` | Address.vue | 是 | — | 地址 CRUD（省市区三级联动选择） |
+| `/user/history` | BrowseHistory.vue | 是 | — | 浏览历史（最近 20 条） |
 | `/seller/products` | ProductManage.vue | 是 | SELLER, ADMIN | 商品管理表格 |
 | `/seller/products/add` | ProductForm.vue | 是 | SELLER, ADMIN | 添加商品 |
 | `/seller/products/:id/edit` | ProductForm.vue | 是 | SELLER, ADMIN | 编辑商品（复用表单） |
 | `/seller/categories` | CategoryManage.vue | 是 | SELLER, ADMIN | 分类树管理 |
+| `/seller/orders` | SellerOrderManage.vue | 是 | SELLER, ADMIN | 卖家订单管理 + 发货 |
+| `/admin/dashboard` | AdminDashboard.vue | 是 | ADMIN | 管理看板（用户/商品/订单/交易统计） |
 | `/admin/users` | UserList.vue | 是 | ADMIN | 用户管理 + 卖家申请审批 |
 | `/admin/review` | ProductReview.vue | 是 | ADMIN | 商品审核 |
 | `/403` | 403.vue | 否 | — | 无权限 |
@@ -132,14 +138,14 @@ logout()                                         // 清 token + 用户
 ```text
 Login.vue 提交表单
   → userStore.login(username, password)
-    → POST /api/auth/login?username=&password=
+    → POST /api/auth/login (JSON body: {username, password})
     → 响应 token 字符串
     → 存 Pinia ref + localStorage['cloud_token']
   → userStore.fetchUserInfo()
-    → GET /api/user/info（带 Authorization 头）
+    → GET /api/users/me（带 Authorization 头）
     → 存 Pinia ref + localStorage['cloud_user']
   → cartStore.fetchCart()
-    → GET /api/cart/list → 初始化购物车
+    → GET /api/cart → 初始化购物车
   → 路由跳转
     → ?redirect 参数存在 → 跳回原页面
     → 否则统一跳转到 /home
@@ -150,7 +156,7 @@ Login.vue 提交表单
 ```text
 Register.vue 提交表单
   → userStore.register(username, password, nickname)
-    → POST /api/auth/register
+    → POST /api/auth/register (JSON body: {username, password, nickname})
     → 不自动登录
     → ElMessage "注册成功" → router.push('/login')
 ```
@@ -244,12 +250,12 @@ AppHeader 退出按钮
 
 | Action | 行为 |
 |---|---|
-| `fetchCart()` | GET 购物车列表 → 赋值 `items`，失败则清空 |
-| `add(productId, qty)` | POST 添加 → 自动 `fetchCart()` 同步 |
-| `updateQty(id, qty)` | PUT 更新数量 → 自动 `fetchCart()` |
-| `toggleCheck(id, checked)` | PUT 切换勾选 → 自动 `fetchCart()`，用于全选/取消全选 |
-| `remove(productId)` | DELETE 移除单个 → 自动 `fetchCart()` |
-| `clear()` | DELETE 清空购物车 → 同时本地 `items = []`，避免额外请求 |
+| `fetchCart()` | GET /api/cart → 赋值 `items`，失败则清空 |
+| `add(productId, qty)` | POST /api/cart/items → 自动 `fetchCart()` 同步 |
+| `updateQty(id, qty)` | PATCH /api/cart/items/:id → 自动 `fetchCart()` |
+| `toggleCheck(id, checked)` | PATCH /api/cart/items/:id/check → 自动 `fetchCart()`，用于全选/取消全选 |
+| `remove(productId)` | DELETE /api/cart/items/:id → 自动 `fetchCart()` |
+| `clear()` | DELETE /api/cart/items → 同时本地 `items = []`，避免额外请求 |
 
 ---
 
@@ -278,6 +284,7 @@ applySeller()                          // POST /api/users/me/apply-seller
 getApplications()                      // GET /api/admin/applications
 processApplication(id, approved)       // PATCH /api/admin/applications/:id (JSON body)
 uploadAvatar(file)                     // POST /api/users/me/avatar (FormData)
+getDashboardStats()                    // GET /api/admin/stats
 ```
 
 ### product.js
@@ -296,6 +303,8 @@ deleteProduct(id)                      // DELETE /api/seller/products/:id
 getPendingProducts({ page, size })     // GET /api/admin/products/pending
 reviewProduct(id, approved)            // PATCH /api/admin/products/:id/review (JSON body)
 uploadImage(file)                      // POST /api/products/upload (FormData)
+suggestProducts(keyword)               // GET /api/products/suggest
+getBrowseHistory()                     // GET /api/products/history
 ```
 
 ### cart.js
@@ -315,6 +324,9 @@ createOrder(addressId, remark)         // POST /api/orders (JSON body: {addressI
 getOrderDetail(id)                     // GET /api/orders/:id
 getOrderList({ page, size })           // GET /api/orders
 cancelOrder(id)                        // POST /api/orders/:id/cancel
+receiveOrder(id)                       // POST /api/orders/:id/confirm-receive
+getSellerOrders({ page, size })        // GET /api/seller/orders
+shipOrder(id)                          // PUT /api/seller/orders/:id/ship
 ```
 
 ### payment.js
@@ -356,7 +368,7 @@ getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo
   - 未登录状态：显示"登录"和"注册"按钮
 - `AppSidebar`：230px 宽度，可收起至 66px
   - `activeMenu` 由 `route.path` 的 prefix 匹配决定高亮项
-  - 菜单分组标签：导航（首页/商品/购物车）、个人（订单/中心/地址）、商家（商品管理/分类管理，SELLER/ADMIN 可见）、管理（商品审核/用户管理，仅 ADMIN）
+  - 菜单分组标签：导航（首页/商品/购物车）、个人（订单/中心/地址/浏览历史）、商家（商品管理/分类管理/订单管理，SELLER/ADMIN 可见）、管理（管理看板/商品审核/用户管理，仅 ADMIN）
   - 购物车菜单项右侧显示数量角标（max 99+）
   - 底部收起/展开按钮（Fold/Expand 图标切换）
   - 收起时：菜单仅显示图标，分组标签隐藏，角标隐藏
@@ -387,7 +399,8 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 ### 商品列表（ProductList.vue）
 
 ```
-搜索栏 → 搜索框(支持回车搜索 + 一键清空) + 分类下拉(树形展平)
+搜索栏 → el-autocomplete 搜索框(输入时自动补全商品名，支持回车搜索 + 一键清空)
+        + 分类下拉(树形展平)
         排序下拉：默认排序 / 价格从低到高 / 价格从高到低 / 销量优先
         选分类/排序 → @change → search() → 重置 page=1 → fetchProducts()
 商品网格 → 4列，ProductCard 组件
@@ -435,6 +448,7 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 卡片列表 → 每张卡片：订单号 + 状态徽标(颜色区分) + 金额 + 收货人 + 时间
          待支付订单显示"立即支付"和"取消订单"按钮
 	         点击"立即支付" → 调 API 获取支付宝表单 → 新窗口打开支付
+         已发货订单显示"确认收货"按钮
 分页   → el-pagination
 状态徽标颜色：
   待支付(0)-orange  已支付(1)-green  已发货(2)-blue
@@ -448,7 +462,8 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
   订单号 / 创建时间 / 总金额 / 支付时间
   收货人 / 联系电话 / 收货地址 / 备注
   后端一同返回订单明细列表（orderItems），后续可展示购买的商品清单
-待支付状态显示"立即支付"按钮 + 返回按钮
+待支付状态显示"立即支付"按钮
+已发货状态显示"确认收货"按钮 + 返回按钮
 ```
 
 ### 支付结果（PaymentResult.vue）
@@ -479,7 +494,8 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 ```
 地址卡片网格(2列) → 收货人 + 电话 + 地址 + 默认标签
 操作 → 添加(弹窗表单) | 编辑 | 删除(确认)
-表单 → 收货人 + 电话 + 省/市/区 + 详细地址 + 默认开关
+表单 → 收货人 + 电话 + 省/市/区(el-cascader 三级联动) + 详细地址 + 默认开关
+       省市区数据来源于 src/data/regions.json，选择后自动填入 form.province/city/district
 ```
 
 ### 商品管理（ProductManage.vue）
@@ -525,6 +541,35 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 表格 → ID | 缩略图 | 名称 | 价格 | 库存 | 卖家ID | 通过/拒绝按钮
 操作后 → 审批后立即从列表移除（乐观更新）
 自动刷新 → 每 30s 静默拉取新待审商品（无需手动刷新）
+```
+
+### 卖家订单管理（SellerOrderManage.vue）
+
+```
+卡片列表 → 每张卡片：订单号 + 状态徽标 + 下单时间
+         商品明细行：缩略图 + 名称 + 单价×数量 + 小计
+         底部：收货人信息 + 合计金额
+         已支付订单显示"发货"按钮 → 确认后 status 改为已发货
+分页 → el-pagination
+```
+
+### 管理看板（AdminDashboard.vue）
+
+```
+6 张统计卡片（3列网格）：
+  用户总数(蓝) | 卖家数量(绿) | 上架商品(黄)
+  订单总数(紫) | 交易总额(红,高亮) | 待支付订单(橙)
+数据来源 → GET /api/admin/stats → 后端聚合 user/order/product 三服务数据
+响应式 → 768px 以下改为 2 列
+```
+
+### 浏览历史（BrowseHistory.vue）
+
+```
+商品网格(4列) → 最近浏览的 20 个商品，复用 ProductCard 组件
+数据来源 → GET /api/products/history → 后端从 Redis List 读取
+无记录 → EmptyState "暂无浏览记录" + "去逛逛"按钮
+浏览记录写入时机 → 商品详情页访问时，后端自动记录到 Redis List（仅登录用户）
 ```
 
 ### 头像裁剪（AvatarCropper.vue）
