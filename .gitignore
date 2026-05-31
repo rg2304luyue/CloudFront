@@ -25,6 +25,9 @@ Thumbs.db
 .env.development.local
 .env.production.local
 
+# ======== Claude Code ========
+.claude/settings.local.json
+
 # ======== Log ========
 *.log
 npm-debug.log*
