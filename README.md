@@ -694,6 +694,51 @@ npm run dev       # http://localhost:5173, /api → localhost:8080
 npm run build     # 生产构建 → dist/
 ```
 
+---
+
+## 开发工具配置
+
+### MySQL MCP 服务器（`.mcp.json`）
+
+项目配置了 MySQL MCP 服务器，让 Claude Code 能直接查询后端数据库：
+
+```json
+{
+  "mcpServers": {
+    "ubuntu-mysql": {
+      "type": "stdio",
+      "command": "node",
+      "args": [".claude/mcp-servers/mysql-cli-server.mjs"],
+      "env": {
+        "MYSQL_HOST": "192.168.91.130",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "root",
+        "MYSQL_PASSWORD": "root",
+        "MYSQL_DB": "cloud_mall"
+      }
+    }
+  }
+}
+```
+
+- 自制 Node.js MCP 服务器，通过本地 `mysql` CLI 连接远程数据库
+- 绕过 `mysql2` npm 驱动在 Node 25.x 上的兼容问题
+- 仅允许只读查询（SELECT），禁止 INSERT/UPDATE/DELETE
+- **`.mcp.json` 已加入 `.gitignore`**（含数据库密码，不提交）
+
+### Claude Code 配置（`.claude/`）
+
+```
+.claude/
+├── settings.json           # PreToolUse Hook：拦截 .env 文件访问
+├── mcp-servers/
+│   └── mysql-cli-server.mjs  # MySQL MCP 服务器脚本
+```
+
+- **`settings.json`**：引用 CloudBack 的 `.env` 安全 Hook，从任何目录阻止读取 `.env` 文件
+- **`skills/`**：（可选）项目级 Claude Code Skills
+- **`settings.local.json`**：个人本地覆盖配置（已 gitignore）
+
 确保后端 7 个服务已在虚拟机启动，Gateway 8080 可访问。
 
 ---

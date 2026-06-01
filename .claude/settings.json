@@ -3,8 +3,12 @@
     "PreToolUse": [
       {
         "matcher": "Read|Write|Edit|Glob|Grep|Bash",
-        "hook": "../CloudBack/.claude/hooks/block-env.sh",
-        "description": "Block access to .env files (hook in CloudBack)"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "../CloudBack/.claude/hooks/block-env.sh"
+          }
+        ]
       }
     ]
   }
