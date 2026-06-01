@@ -17,46 +17,19 @@
 
 <style scoped>
 .error-root {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 56px);
-  padding: 40px 24px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100vh - 56px); padding: 40px 24px;
   background: var(--bg);
 }
-.error-card {
-  text-align: center;
-  max-width: 440px;
-}
+.error-card { text-align: center; max-width: 440px; }
 .error-code {
-  font-size: 120px;
-  font-weight: 900;
+  font-size: 120px; font-weight: 900;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  line-height: 1;
-  margin-bottom: -8px;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: -8px;
 }
-.error-icon.warn {
-  color: #f59e0b;
-  margin-bottom: 16px;
-}
-.error-card h2 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-.error-card p {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-bottom: 30px;
-  line-height: 1.6;
-}
-.error-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
+.error-icon.warn { color: #f59e0b; margin-bottom: 16px; }
+.error-card h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.error-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; }
+.error-actions { display: flex; gap: 10px; justify-content: center; }
 </style>

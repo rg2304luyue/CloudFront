@@ -21,8 +21,8 @@
       <template v-if="userStore.isLogin">
         <router-link to="/cart" class="cart-link" title="购物车">
           <el-icon :size="20"><ShoppingCart /></el-icon>
-          <span v-if="cartStore.totalCount > 0" class="cart-dot">
-            {{ cartStore.totalCount > 99 ? '99+' : cartStore.totalCount }}
+          <span v-if="cartStore.checkedCount > 0" class="cart-dot">
+            {{ cartStore.checkedCount > 99 ? '99+' : cartStore.checkedCount }}
           </span>
         </router-link>
 
@@ -87,7 +87,7 @@ function handleCommand(cmd) {
   if (cmd === 'logout') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
       userStore.logout()
-      cartStore.items = []
+      cartStore.clear()
       router.push('/home')
     }).catch(() => {})
   } else if (cmd === 'info') {

@@ -65,10 +65,10 @@
         </div>
         <div class="footer-right">
           <span class="total-label">
-            已选 <strong>{{ cartStore.totalCount }}</strong> 件，合计
+            已选 <strong>{{ cartStore.checkedCount }}</strong> 件，合计
           </span>
           <span class="total-price">¥{{ cartStore.totalPrice.toFixed(2) }}</span>
-          <button class="btn btn-danger btn-lg" :disabled="cartStore.totalCount === 0" @click="openCheckout">
+          <button class="btn btn-danger btn-lg" :disabled="cartStore.checkedCount === 0" @click="openCheckout">
             去结算
           </button>
         </div>

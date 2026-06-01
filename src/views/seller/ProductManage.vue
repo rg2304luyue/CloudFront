@@ -65,23 +65,17 @@ const size = ref(20)
 const total = ref(0)
 let timer = null
 
-async function fetchProducts() {
-  loading.value = true
+async function fetchProducts(silent = false) {
+  if (!silent) loading.value = true
   try {
     const res = await getMyProducts({ page: page.value, size: size.value })
     products.value = res.data || []
     total.value = res.total || 0
+  } catch (e) {
+    if (!silent) throw e
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
-}
-
-async function fetchProductsSilent() {
-  try {
-    const res = await getMyProducts({ page: page.value, size: size.value })
-    products.value = res.data || []
-    total.value = res.total || 0
-  } catch {}
 }
 
 async function handleDelete(row) {
@@ -95,7 +89,7 @@ async function handleDelete(row) {
 
 onMounted(() => {
   fetchProducts()
-  timer = setInterval(fetchProductsSilent, 30000)
+  timer = setInterval(() => fetchProducts(true), 30000)
 })
 onBeforeUnmount(() => clearInterval(timer))
 </script>

@@ -93,7 +93,6 @@ const form = reactive({
 })
 
 const regionValues = ref([])
-const regionOptions = regionData
 
 function onRegionChange(values) {
   if (values && values.length === 3) {

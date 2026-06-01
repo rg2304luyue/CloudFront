@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { ZoomIn, ZoomOut } from '@element-plus/icons-vue'
 
 const props = defineProps({ file: File })
@@ -140,6 +140,14 @@ function doCrop() {
     if (blob) emit('cropped', blob)
   }, 'image/jpeg', 0.85)
 }
+
+// 清理全局事件监听器，防止内存泄漏
+onBeforeUnmount(() => {
+  window.removeEventListener('mousemove', onDrag)
+  window.removeEventListener('mouseup', stopDrag)
+  window.removeEventListener('touchmove', onDragTouch)
+  window.removeEventListener('touchend', stopDragTouch)
+})
 
 // Read file as data URL
 watch(() => props.file, f => {

@@ -65,8 +65,7 @@ const total = ref(0)
 const page = ref(1)
 const size = ref(10)
 
-const statusMap = { 0: '待支付', 1: '已支付', 2: '已发货', 3: '已完成', 4: '已取消' }
-function statusText(s) { return statusMap[s] || '未知' }
+import { orderStatusText as statusText } from '@/constants/orderStatus'
 
 onMounted(() => fetchOrders())
 

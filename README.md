@@ -53,7 +53,7 @@ CloudFront/
     │   ├── EmptyState.vue               #   空数据占位（图标 + 描述 + 按钮）
     │   └── LoadingState.vue             #   加载中占位（旋转动画）
     │
-    ├── views/                           # 18 个页面视图
+    ├── views/                           # 20 个页面视图
     │   ├── Home.vue                     #   首页：Hero Banner + 热门商品网格
     │   ├── Login.vue                    #   登录页（独立布局）
     │   ├── Register.vue                 #   注册页（独立布局）
@@ -62,15 +62,22 @@ CloudFront/
     │   ├── cart/                        #   Cart（表格 + 结算弹窗）
     │   ├── order/                       #   OrderList、OrderDetail
     │   ├── payment/                     #   PaymentResult
-    │   ├── user/                        #   UserInfo、Address、BrowseHistory
+    │   ├── user/                        #   UserInfo、Address
     │   ├── seller/                      #   ProductManage、ProductForm、CategoryManage、SellerOrderManage
-    │   └── admin/                       #   UserList、ProductReview、AdminDashboard
+    │   └── admin/                       #   UserList、ProductReview
     │
     ├── assets/
-    │   └── global.css                   # CSS 变量、重置、工具类、按钮体系
+    │   ├── global.css                   # CSS 变量、重置、工具类、按钮体系
+    │   └── error-page.css               # 错误页公共样式（403/404/500 共用）
     │
     ├── data/
     │   └── regions.json                 # 中国省市区三级数据（供 el-cascader 使用）
+    │
+    ├── constants/
+    │   └── orderStatus.js               # 订单状态映射常量（3个页面共用）
+    │
+    ├── composables/
+    │   └── usePayment.js                # 支付宝支付处理（OrderList/OrderDetail 共用）
     │
     └── utils/
         ├── request.js                   # Axios 实例 + 请求/响应拦截器
@@ -105,13 +112,11 @@ logout()                                         // 清 token + 用户
 | `/payment/result` | PaymentResult.vue | 是 | — | 支付结果（成功/处理中/失败） |
 | `/user/info` | UserInfo.vue | 是 | — | 个人信息 + 申请卖家 |
 | `/user/address` | Address.vue | 是 | — | 地址 CRUD（省市区三级联动选择） |
-| `/user/history` | BrowseHistory.vue | 是 | — | 浏览历史（最近 20 条） |
 | `/seller/products` | ProductManage.vue | 是 | SELLER, ADMIN | 商品管理表格 |
 | `/seller/products/add` | ProductForm.vue | 是 | SELLER, ADMIN | 添加商品 |
 | `/seller/products/:id/edit` | ProductForm.vue | 是 | SELLER, ADMIN | 编辑商品（复用表单） |
 | `/seller/categories` | CategoryManage.vue | 是 | SELLER, ADMIN | 分类树管理 |
 | `/seller/orders` | SellerOrderManage.vue | 是 | SELLER, ADMIN | 卖家订单管理 + 发货 |
-| `/admin/dashboard` | AdminDashboard.vue | 是 | ADMIN | 管理看板（用户/商品/订单/交易统计） |
 | `/admin/users` | UserList.vue | 是 | ADMIN | 用户管理 + 卖家申请审批 |
 | `/admin/review` | ProductReview.vue | 是 | ADMIN | 商品审核 |
 | `/403` | 403.vue | 否 | — | 无权限 |
@@ -125,7 +130,7 @@ logout()                                         // 清 token + 用户
 2. 若 to.meta.requireAuth && !isLoggedIn()
    → redirect: /login?redirect=<原路径>
 3. 若 to.meta.roles 存在
-   从 localStorage 读用户角色（默认 BUYER）
+   从 Pinia userStore 读用户角色（默认 BUYER）
    若角色不在允许列表 → redirect: /403
 ```
 
@@ -175,7 +180,7 @@ App.vue onMounted
 AppHeader 退出按钮
   → ElMessageBox.confirm("确定退出?")
   → userStore.logout()      ← 清 token + userInfo
-  → cartStore.items = []    ← 清购物车
+  → cartStore.clear()       ← 清购物车
   → router.push('/home')
 ```
 
@@ -243,7 +248,7 @@ AppHeader 退出按钮
 
 | 属性 | 逻辑 |
 |---|---|
-| `totalCount` | checked 商品数量总和 |
+| `checkedCount` | checked 商品数量总和 |
 | `totalPrice` | checked 商品的 `price × quantity` 总和 |
 
 **Actions**：`fetchCart()`、`add()`、`updateQty()`、`toggleCheck()`、`remove()`、`clear()`
@@ -284,7 +289,6 @@ applySeller()                          // POST /api/users/me/seller-applications
 getApplications()                      // GET /api/admin/applications
 processApplication(id, approved)       // PATCH /api/admin/applications/:id (JSON body)
 uploadAvatar(file)                     // POST /api/users/me/avatar (FormData)
-getDashboardStats()                    // GET /api/admin/stats
 ```
 
 ### product.js
@@ -303,8 +307,6 @@ deleteProduct(id)                      // DELETE /api/seller/products/:id
 getPendingProducts({ page, size })     // GET /api/admin/products/pending
 reviewProduct(id, approved)            // PATCH /api/admin/products/:id/review (JSON body)
 uploadImage(file)                      // POST /api/products/upload (FormData)
-suggestProducts(keyword)               // GET /api/products/suggest
-getBrowseHistory()                     // GET /api/products/history
 ```
 
 ### cart.js
@@ -369,7 +371,7 @@ getPaymentByOrderNo(orderNo)             // GET /api/payment/:orderNo
   - 未登录状态：显示"登录"和"注册"按钮
 - `AppSidebar`：230px 宽度，可收起至 66px
   - `activeMenu` 由 `route.path` 的 prefix 匹配决定高亮项
-  - 菜单分组标签：导航（首页/商品/购物车）、个人（订单/中心/地址/浏览历史）、商家（商品管理/分类管理/订单管理，SELLER/ADMIN 可见）、管理（管理看板/商品审核/用户管理，仅 ADMIN）
+  - 菜单分组标签：导航（首页/商品/购物车）、个人（订单/中心/地址）、商家（商品管理/分类管理/订单管理，SELLER/ADMIN 可见）、管理（商品审核/用户管理，仅 ADMIN）
   - 购物车菜单项右侧显示数量角标（max 99+）
   - 底部收起/展开按钮（Fold/Expand 图标切换）
   - 收起时：菜单仅显示图标，分组标签隐藏，角标隐藏
@@ -554,25 +556,6 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 分页 → el-pagination
 ```
 
-### 管理看板（AdminDashboard.vue）
-
-```
-6 张统计卡片（3列网格）：
-  用户总数(蓝) | 卖家数量(绿) | 上架商品(黄)
-  订单总数(紫) | 交易总额(红,高亮) | 待支付订单(橙)
-数据来源 → GET /api/admin/stats → 后端聚合 user/order/product 三服务数据
-响应式 → 768px 以下改为 2 列
-```
-
-### 浏览历史（BrowseHistory.vue）
-
-```
-商品网格(4列) → 最近浏览的 20 个商品，复用 ProductCard 组件
-数据来源 → GET /api/products/history → 后端从 Redis List 读取
-无记录 → EmptyState "暂无浏览记录" + "去逛逛"按钮
-浏览记录写入时机 → 商品详情页访问时，后端自动记录到 Redis List（仅登录用户）
-```
-
 ### 头像裁剪（AvatarCropper.vue）
 
 ```
@@ -584,6 +567,34 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
      → canvas.toBlob('image/jpeg', 0.85) 输出 300×300 JPEG
      → emit('cropped', blob) 通知父组件上传
 ```
+
+---
+
+## 共享模块
+
+### orderStatus.js（`constants/orderStatus.js`）
+
+被 OrderList、OrderDetail、SellerOrderManage 三个页面引用：
+
+```js
+export const ORDER_STATUS_MAP = { 0: '待支付', 1: '已支付', 2: '已发货', 3: '已完成', 4: '已取消' }
+export function orderStatusText(status) { ... }  // 根据 code 返回中文文本
+```
+
+### usePayment.js（`composables/usePayment.js`）
+
+被 OrderList、OrderDetail 两个页面引用，封装支付宝支付流程：
+
+```js
+function handlePay(orderNo)
+  → ElMessageBox 确认
+  → createAlipayPayment(orderNo) 获取支付表单 HTML
+  → window.open + document.write 在新窗口渲染支付页面
+```
+
+### error-page.css（`assets/error-page.css`）
+
+403、404、500 三个错误页面的公共样式：`.error-root` 全屏居中布局、`.error-code` 120px 渐变数字、`.error-card` 内容卡片、`.error-actions` 按钮组。
 
 ---
 
@@ -690,7 +701,7 @@ props: {
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173, /api → localhost:8080
+npm run dev       # http://localhost:4173, /api → localhost:8080
 npm run build     # 生产构建 → dist/
 ```
 
@@ -758,7 +769,7 @@ npm run build     # 生产构建 → dist/
 | 下拉框选分类无反应 | 前端未绑定 change 事件 | 确认 @change="search" 已添加 |
 | 选父分类查不到商品 | 之前只精确匹配分类 ID | 后端已改为递归收集子分类 ID |
 | 订单显示待支付但支付宝已扣款 | 异步通知无法到达本地 | 查询支付记录时后端主动查支付宝确认状态 |
-| 支付后跳转"localhost拒绝连接" | 前端端口不是默认5173，或未启动 | 确认 Vite preview/build 端口，更新 ALIPAY_RETURN_URL |
+| 支付后跳转"localhost拒绝连接" | 前端端口不是默认4173，或未启动 | 确认 Vite 端口，更新 ALIPAY_RETURN_URL |
 | 点击支付后弹出支付宝错误页 | return_url 格式被支付宝拒绝 | 使用前端直连地址而非网关地址 |
 | 裁剪头像周围有黑框 | Canvas 未裁剪为圆形且 JPEG 不支持透明 | 已修复：白色填充 + 圆形 clip 路径 + clamp 边界 |
 | 裁剪头像位置偏上 | 计算未考虑 object-fit:contain 留白 | 已修复：正确映射 CSS 盒模型→源图像素坐标 |

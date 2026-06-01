@@ -58,21 +58,21 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getOrderList, cancelOrder, receiveOrder } from '@/api/order'
-import { createAlipayPayment } from '@/api/payment'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { usePayment } from '@/composables/usePayment'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
+const { handlePay } = usePayment()
 const orders = ref([])
 const loading = ref(true)
 const total = ref(0)
 const page = ref(1)
 const size = ref(10)
 
-const statusMap = { 0: '待支付', 1: '已支付', 2: '已发货', 3: '已完成', 4: '已取消' }
-function statusText(s) { return statusMap[s] || '未知' }
+import { orderStatusText as statusText } from '@/constants/orderStatus'
 
 onMounted(() => fetchOrders())
 
@@ -95,22 +95,6 @@ function handleCancel(id) {
       fetchOrders()
     })
     .catch(() => {})
-}
-
-function handlePay(orderNo) {
-  ElMessageBox.confirm('即将跳转到支付宝进行支付', '确认支付', {
-    confirmButtonText: '去支付',
-    cancelButtonText: '取消',
-    type: 'info'
-  }).then(async () => {
-    const res = await createAlipayPayment(orderNo)
-    const payForm = res.data
-    if (payForm) {
-      const w = window.open('', '_blank')
-      w.document.write(payForm)
-      w.document.close()
-    }
-  }).catch(() => {})
 }
 
 function handleReceive(id) {

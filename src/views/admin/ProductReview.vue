@@ -56,27 +56,21 @@ let timer = null
 
 onMounted(() => {
   fetchData()
-  timer = setInterval(fetchDataSilent, 30000)
+  timer = setInterval(() => fetchData(true), 30000)
 })
 onBeforeUnmount(() => clearInterval(timer))
 
-async function fetchData() {
-  loading.value = true
+async function fetchData(silent = false) {
+  if (!silent) loading.value = true
   try {
     const res = await getPendingProducts({ page: page.value, size: size.value })
     products.value = res.data || []
     total.value = res.total || 0
+  } catch (e) {
+    if (!silent) throw e
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
-}
-
-async function fetchDataSilent() {
-  try {
-    const res = await getPendingProducts({ page: page.value, size: size.value })
-    products.value = res.data || []
-    total.value = res.total || 0
-  } catch {}
 }
 
 async function handleReview(product, approved) {

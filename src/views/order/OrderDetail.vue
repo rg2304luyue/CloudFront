@@ -66,19 +66,18 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getOrderDetail, receiveOrder } from '@/api/order'
-import { createAlipayPayment } from '@/api/payment'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { usePayment } from '@/composables/usePayment'
+import { orderStatusText as statusText } from '@/constants/orderStatus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { handlePay } = usePayment()
 const order = ref(null)
 const loading = ref(true)
-
-const statusMap = { 0: '待支付', 1: '已支付', 2: '已发货', 3: '已完成', 4: '已取消' }
-function statusText(s) { return statusMap[s] || '未知' }
 
 onMounted(async () => {
   try {
@@ -88,22 +87,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-function handlePay(orderNo) {
-  ElMessageBox.confirm('即将跳转到支付宝进行支付', '确认支付', {
-    confirmButtonText: '去支付',
-    cancelButtonText: '取消',
-    type: 'info'
-  }).then(async () => {
-    const res = await createAlipayPayment(orderNo)
-    const payForm = res.data
-    if (payForm) {
-      const w = window.open('', '_blank')
-      w.document.write(payForm)
-      w.document.close()
-    }
-  }).catch(() => {})
-}
 
 function handleReceive(id) {
   ElMessageBox.confirm('请确认已经收到商品', '确认收货', { type: 'info' })

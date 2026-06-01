@@ -7,7 +7,7 @@ import {
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
-  const totalCount = computed(() => items.value.filter(i => i.checked).length)
+  const checkedCount = computed(() => items.value.filter(i => i.checked).length)
   const totalPrice = computed(() =>
     items.value
       .filter(i => i.checked)
@@ -48,5 +48,5 @@ export const useCartStore = defineStore('cart', () => {
     items.value = []
   }
 
-  return { items, totalCount, totalPrice, fetchCart, add, updateQty, toggleCheck, remove, clear }
+  return { items, checkedCount, totalPrice, fetchCart, add, updateQty, toggleCheck, remove, clear }
 })

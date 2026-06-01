@@ -25,6 +25,7 @@ request.interceptors.response.use(
     const res = response.data
     if (res.code !== 200) {
       ElMessage.error(res.message || '请求失败')
+      // 仅 401 认证失败时清除 token
       if (res.code === 401) {
         removeToken()
         window.location.href = '/login'

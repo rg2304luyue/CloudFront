@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isLoggedIn, getUser } from '@/utils/auth'
+import { isLoggedIn } from '@/utils/auth'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
@@ -75,8 +76,8 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.meta.roles && to.meta.roles.length > 0) {
-    const user = getUser()
-    const userRole = user?.role || 'BUYER'
+    const userStore = useUserStore()
+    const userRole = userStore.role || 'BUYER'
     if (!to.meta.roles.includes(userRole)) {
       next({ name: 'Forbidden' })
       return

@@ -18,8 +18,8 @@
       <el-menu-item index="/cart">
         <el-icon><ShoppingCart /></el-icon>
         <span>购物车</span>
-        <span v-show="!collapsed && cartStore.totalCount > 0" class="cart-badge">
-          {{ cartStore.totalCount > 99 ? '99+' : cartStore.totalCount }}
+        <span v-show="!collapsed && cartStore.checkedCount > 0" class="cart-badge">
+          {{ cartStore.checkedCount > 99 ? '99+' : cartStore.checkedCount }}
         </span>
       </el-menu-item>
 
