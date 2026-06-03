@@ -38,7 +38,7 @@ CloudFront/
     │   └── cart.js                      #   购物车列表、勾选统计
     │
     ├── router/
-    │   └── index.js                     # 21 条路由 + 登录守卫 + 角色守卫
+    │   └── index.js                     # 19 条路由 + 登录守卫 + 角色守卫
     │
     ├── layout/
     │   └── MainLayout.vue               # 顶栏 + 侧栏 + 内容 + 底栏 框架
@@ -67,7 +67,7 @@ CloudFront/
     │   └── admin/                       #   UserList、ProductReview
     │
     ├── assets/
-    │   ├── global.css                   # CSS 变量、重置、工具类、按钮体系
+    │   ├── global.css                   # CSS 变量、重置、工具类、按钮体系、订单状态标签
     │   └── error-page.css               # 错误页公共样式（403/404/500 共用）
     │
     ├── data/
@@ -97,7 +97,7 @@ logout()                                         // 清 token + 用户
 
 ## 路由表
 
-21 条路由，`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
+19 条路由，`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
 
 | 路径 | 页面 | 认证 | 角色限制 | 说明 |
 |---|---|---|---|---|
@@ -694,6 +694,7 @@ props: {
 | `.truncate` | 单行省略（overflow + text-overflow + nowrap） |
 | `.grid-2` / `.grid-3` / `.grid-4` | 响应式网格（自动适配断点） |
 | `.mt-1`~`.mt-3` / `.mb-1`~`.mb-3` | 间距工具类 |
+| `.status-0` ~ `.status-4` | 订单状态徽标颜色（待支付/已支付/已发货/已完成/已取消） |
 
 ---
 

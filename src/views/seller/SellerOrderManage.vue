@@ -99,11 +99,6 @@ function handleShip(id) {
 .order-no { font-size: 12px; color: var(--text-muted); }
 .order-time { font-size: 12px; color: var(--text-muted); }
 .badge { font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: var(--radius-full); }
-.status-0 { background: #fff7ed; color: #ea580c; }
-.status-1 { background: #f0fdf6; color: #16a34a; }
-.status-2 { background: #eff6ff; color: #2563eb; }
-.status-3 { background: #f5f5f5; color: #737373; }
-.status-4 { background: #fef2f2; color: #dc2626; }
 .order-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .order-item-row { display: flex; align-items: center; gap: 12px; }
 .item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }

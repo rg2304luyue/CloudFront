@@ -128,11 +128,6 @@ function handleReceive(id) {
   padding: 5px 14px;
   border-radius: var(--radius-full);
 }
-.status-0 { background: #fff7ed; color: #ea580c; }
-.status-1 { background: #f0fdf6; color: #16a34a; }
-.status-2 { background: #eff6ff; color: #2563eb; }
-.status-3 { background: #f5f5f5; color: #737373; }
-.status-4 { background: #fef2f2; color: #dc2626; }
 
 .detail-grid {
   display: grid;
