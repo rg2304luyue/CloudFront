@@ -1,0 +1,11 @@
+/* Element Plus 基础样式 */
+
+/* Dialog 遮罩层 */
+.el-overlay {
+  z-index: 2000 !important;
+}
+
+/* MessageBox 遮罩层 */
+.el-overlay.is-message-box {
+  z-index: 10000 !important;
+}

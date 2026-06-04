@@ -20,6 +20,10 @@ export function checkItem(productId, checked) {
   return request.patch(`/cart/items/${productId}/check`, { checked })
 }
 
+export function checkAllItems(checked) {
+  return request.patch('/cart/items/check-all', { checked })
+}
+
 export function removeFromCart(productId) {
   return request.delete(`/cart/items/${productId}`)
 }

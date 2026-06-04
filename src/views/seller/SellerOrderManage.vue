@@ -55,6 +55,8 @@
 import { ref, onMounted } from 'vue'
 import { getSellerOrders, shipOrder } from '@/api/order'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { orderStatusText as statusText } from '@/constants/orderStatus'
+import { usePolling } from '@/composables/usePolling'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -65,18 +67,16 @@ const total = ref(0)
 const page = ref(1)
 const size = ref(10)
 
-import { orderStatusText as statusText } from '@/constants/orderStatus'
-
-onMounted(() => fetchOrders())
-
-async function fetchOrders() {
-  loading.value = true
+async function fetchOrders(silent = false) {
+  if (!silent) loading.value = true
   try {
     const r = await getSellerOrders({ page: page.value, size: size.value })
     orders.value = r.data || []
     total.value = r.total || 0
+  } catch (e) {
+    if (!silent) throw e
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -89,6 +89,11 @@ function handleShip(id) {
     })
     .catch(() => {})
 }
+
+onMounted(() => fetchOrders())
+
+// 30 秒轮询 + visibility 自动暂停/恢复
+usePolling(() => fetchOrders(true))
 </script>
 
 <style scoped>

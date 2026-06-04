@@ -1,7 +1,7 @@
 <template>
   <div class="product-card" @click="$router.push(`/product/${product.id}`)">
     <div class="card-image">
-      <el-image v-if="product.mainImage" :src="product.mainImage" fit="cover" class="img-main">
+      <el-image v-if="product.mainImage" :src="product.mainImage" fit="cover" class="img-main" loading="lazy">
         <template #error>
           <div class="img-fallback"><el-icon :size="36"><PictureFilled /></el-icon></div>
         </template>
@@ -24,8 +24,6 @@
 </template>
 
 <script setup>
-import { PictureFilled } from '@element-plus/icons-vue'
-
 defineProps({
   product: { type: Object, required: true }
 })

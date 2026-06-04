@@ -75,7 +75,9 @@ async function handleLogin() {
     ElMessage.success('登录成功')
     const target = route.query.redirect || '/home'
     router.push(target)
-  } catch {} finally {
+  } catch {
+    // 错误已由 request.js 响应拦截器处理（显示错误消息）
+  } finally {
     loading.value = false
   }
 }

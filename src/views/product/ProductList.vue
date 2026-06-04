@@ -82,6 +82,14 @@ onMounted(async () => {
   await fetchProducts()
 })
 
+// 已在列表页时再次搜索（路由复用同一组件，onMounted 不触发）
+watch(() => route.query.keyword, (newKw) => {
+  if (newKw) {
+    keyword.value = newKw
+    search()
+  }
+})
+
 function flattenCategories(cats, prefix = '') {
   const r = []
   for (const c of cats) {
@@ -97,7 +105,9 @@ async function loadCategories() {
   try {
     const r = await getCategoryTree()
     flatCategories.value = flattenCategories(r.data || [])
-  } catch {}
+  } catch {
+    // 错误已由 request.js 响应拦截器处理（显示错误消息）
+  }
 }
 
 async function fetchProducts() {

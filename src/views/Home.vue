@@ -31,6 +31,11 @@
       </div>
 
       <LoadingState v-if="loading" text="正在加载..." />
+      <div v-else-if="error" class="error-state">
+        <el-icon :size="40" color="#9c9cb8"><WarningFilled /></el-icon>
+        <p>加载失败，请稍后重试</p>
+        <button class="btn btn-primary" @click="fetchProducts">重新加载</button>
+      </div>
       <EmptyState v-else-if="products.length === 0" description="暂无商品" show-action @action="$router.push('/product/list')" />
 
       <div v-else class="product-grid">
@@ -49,15 +54,22 @@ import ProductCard from '@/components/ProductCard.vue'
 
 const products = ref([])
 const loading = ref(true)
+const error = ref(false)
 
-onMounted(async () => {
+async function fetchProducts() {
+  error.value = false
+  loading.value = true
   try {
     const r = await getHotProducts()
     products.value = r.data || []
+  } catch {
+    error.value = true
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(() => fetchProducts())
 </script>
 
 <style scoped>
@@ -143,6 +155,19 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .more-link:hover { color: var(--primary); }
+
+/* Error State */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+.error-state p {
+  font-size: 14px;
+}
 
 /* Product Grid */
 .product-grid {

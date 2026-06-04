@@ -115,8 +115,18 @@ async function addToCart() {
 }
 
 async function buyNow() {
-  await addToCart()
-  router.push('/cart')
+  if (!userStore.isLogin) {
+    router.push('/login')
+    return
+  }
+  try {
+    await cartStore.add(product.value.id, quantity.value)
+    // 仅在添加成功后存储标记，确保购物车页能正确定位该商品
+    sessionStorage.setItem('buyNowProductId', product.value.id.toString())
+    router.push('/cart')
+  } catch {
+    ElMessage.error('操作失败，请重试')
+  }
 }
 </script>
 

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { login as loginApi, register as registerApi } from '@/api/auth'
 import { getUserInfo } from '@/api/user'
 import { setToken, removeToken, setUser, removeUser, getToken } from '@/utils/auth'
+import { useCartStore } from './cart'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(getToken() || '')
@@ -40,6 +41,9 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = null
     removeToken()
     removeUser()
+    // 同步清除购物车（本地重置，避免 API 调用的 401）
+    const cartStore = useCartStore()
+    cartStore.reset()
   }
 
   return { token, userInfo, isLogin, role, isSeller, isAdmin, roleLabel, login, register, fetchUserInfo, logout }

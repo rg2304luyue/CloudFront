@@ -43,7 +43,8 @@
               :max="99"
               size="small"
               controls-position="right"
-              @change="(v) => cartStore.updateQty(item.productId, v)"
+              :disabled="updatingQty.has(item.productId)"
+              @change="(v) => debouncedUpdateQty(item.productId, v)"
             />
           </div>
           <div class="col-total">
@@ -75,7 +76,7 @@
       </div>
 
       <!-- Checkout Dialog -->
-      <el-dialog v-model="dialogVisible" title="确认下单" width="520px" :close-on-click-modal="false" class="checkout-dialog">
+      <el-dialog v-model="dialogVisible" title="确认下单" width="560px" :close-on-click-modal="false" class="checkout-dialog">
         <div class="dialog-body">
           <div class="block">
             <h4>收货地址</h4>
@@ -89,21 +90,23 @@
             </el-select>
             <p v-if="addresses.length === 0" class="no-addr">
               暂无收货地址，请先去
-              <a href="javascript:void(0)" @click="$router.push('/user/address');dialogVisible=false" style="color:var(--primary)">添加地址</a>
+              <a href="javascript:void(0)" @click="$router.push('/user/address');dialogVisible=false" style="color: #4f6ef5; font-weight: 600;">添加地址</a>
             </p>
           </div>
 
           <div class="block">
             <h4>商品清单</h4>
-            <div v-for="item in checkedItems" :key="item.productId" class="order-item">
-              <span class="order-item-name">{{ item.name }} ×{{ item.quantity }}</span>
-              <span class="order-item-price">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
+            <div class="order-items-list">
+              <div v-for="item in checkedItems" :key="item.productId" class="order-item">
+                <span class="order-item-name">{{ item.name }} ×{{ item.quantity }}</span>
+                <span class="order-item-price">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
+              </div>
             </div>
           </div>
 
           <div class="block">
-            <h4>备注</h4>
-            <el-input v-model="remark" placeholder="选填（如有特殊要求请备注）" />
+            <h4>订单备注</h4>
+            <el-input v-model="remark" placeholder="选填（如有特殊要求请备注）" type="textarea" :rows="2" resize="none" />
           </div>
 
           <div class="dialog-total">
@@ -112,8 +115,8 @@
           </div>
         </div>
         <template #footer>
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="danger" @click="submitOrder" :loading="submitting" :disabled="!selectedAddressId">
+          <el-button @click="dialogVisible = false" size="large">取消</el-button>
+          <el-button type="primary" @click="submitOrder" :loading="submitting" :disabled="!selectedAddressId" size="large">
             提交订单
           </el-button>
         </template>
@@ -123,7 +126,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { getAddressList } from '@/api/user'
@@ -143,6 +146,7 @@ const addresses = ref([])
 const selectedAddressId = ref(null)
 const remark = ref('')
 const orderToken = ref('')
+const updatingQty = ref(new Set())
 
 const checkAll = computed({
   get: () => cartStore.items.length > 0 && cartStore.items.every(i => i.checked),
@@ -154,12 +158,51 @@ const checkedItems = computed(() => cartStore.items.filter(i => i.checked))
 onMounted(async () => {
   await cartStore.fetchCart()
   loading.value = false
+
+  // 处理"立即购买"逻辑：只勾选指定商品
+  const buyNowProductId = sessionStorage.getItem('buyNowProductId')
+  if (buyNowProductId) {
+    // 先取消所有勾选
+    await cartStore.checkAll(false)
+    // 只勾选"立即购买"的商品
+    const targetItem = cartStore.items.find(i => i.productId.toString() === buyNowProductId)
+    if (targetItem) {
+      await cartStore.toggleCheck(targetItem.productId, true)
+    }
+    sessionStorage.removeItem('buyNowProductId')
+  }
+})
+
+// 防抖更新数量（每个商品独立计时器，避免快速切换商品时定时器互相覆盖导致永久禁用）
+const qtyTimers = new Map()
+function debouncedUpdateQty(productId, quantity) {
+  updatingQty.value.add(productId)
+
+  if (qtyTimers.has(productId)) {
+    clearTimeout(qtyTimers.get(productId))
+  }
+
+  qtyTimers.set(productId, setTimeout(async () => {
+    qtyTimers.delete(productId)
+    try {
+      await cartStore.updateQty(productId, quantity)
+    } catch {
+      ElMessage.error('更新数量失败')
+    } finally {
+      updatingQty.value.delete(productId)
+    }
+  }, 500))
+}
+
+onBeforeUnmount(() => {
+  for (const timer of qtyTimers.values()) {
+    clearTimeout(timer)
+  }
+  qtyTimers.clear()
 })
 
 function toggleAll(v) {
-  cartStore.items.forEach(i => {
-    if (i.checked !== v) cartStore.toggleCheck(i.productId, v)
-  })
+  cartStore.checkAll(v)
 }
 
 async function openCheckout() {
@@ -307,47 +350,201 @@ async function submitOrder() {
 }
 
 /* Dialog */
+.checkout-dialog .el-dialog {
+  background: #fff !important;
+  margin: 0 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18) !important;
+}
+
+.checkout-dialog .el-dialog__header {
+  padding: 28px 32px 20px !important;
+  border-bottom: 1px solid #f0f0f5 !important;
+  flex-shrink: 0 !important;
+  background: linear-gradient(to bottom, #fafbfc, #fff) !important;
+}
+
+.checkout-dialog .el-dialog__title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #1a1a2e !important;
+  letter-spacing: -0.5px !important;
+}
+
+.checkout-dialog .el-dialog__body {
+  padding: 24px 32px !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  background: #fff !important;
+}
+
+.checkout-dialog .el-dialog__footer {
+  padding: 20px 32px !important;
+  border-top: 1px solid #f0f0f5 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+  background: linear-gradient(to top, #fafbfc, #fff) !important;
+}
+
 .dialog-body {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 24px;
 }
+
 .block h4 {
-  margin: 0 0 8px;
-  font-size: 14px;
+  margin: 0 0 12px;
+  font-size: 15px;
   font-weight: 600;
-  color: var(--text);
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.block h4::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(135deg, #4f6ef5, #6c5ce7);
+  border-radius: 2px;
+}
+
 .no-addr {
-  color: var(--text-muted);
+  color: #9c9cb8;
   font-size: 13px;
-  margin-top: 4px;
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: #f8f9fc;
+  border-radius: 10px;
+  border: 1px dashed #e0e0e8;
 }
+
 .order-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-light);
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #5a5a7a;
+  background: #f8f9fc;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
 }
-.order-item:last-child { border-bottom: none; }
-.order-item-name { flex: 1; }
-.order-item-price { font-weight: 500; color: var(--text); }
+
+.order-item:hover {
+  background: #f0f1f8;
+  transform: translateX(4px);
+}
+
+.order-item:last-child {
+  margin-bottom: 0;
+}
+
+.order-item-name {
+  flex: 1;
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.order-item-price {
+  font-weight: 600;
+  color: #e8595b;
+  font-size: 15px;
+}
+
 .dialog-total {
   display: flex;
   justify-content: flex-end;
   align-items: baseline;
-  gap: 10px;
-  font-size: 15px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
+  gap: 12px;
+  font-size: 16px;
+  padding: 20px 0 0;
+  border-top: 2px solid #f0f0f5;
+  margin-top: 8px;
 }
+
 .dialog-total strong {
-  font-size: 22px;
-  color: var(--danger);
+  font-size: 28px;
+  color: #e8595b;
   font-weight: 800;
+  letter-spacing: -1px;
+}
+
+/* 合计行特殊样式 */
+.dialog-total::before {
+  content: '';
+  flex: 1;
+}
+
+/* 订单商品列表 */
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 备注输入框样式 */
+.checkout-dialog .el-textarea__inner {
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  border-color: #e8e8f0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.checkout-dialog .el-textarea__inner:focus {
+  border-color: #4f6ef5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 110, 245, 0.1) !important;
+}
+
+/* 提交按钮特殊样式 */
+.checkout-dialog .el-button--primary {
+  background: linear-gradient(135deg, #4f6ef5 0%, #6c5ce7 100%) !important;
+  border: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  box-shadow: 0 4px 16px rgba(79, 110, 245, 0.3) !important;
+}
+
+.checkout-dialog .el-button--primary:hover {
+  background: linear-gradient(135deg, #3b54d4 0%, #5a4bd4 100%) !important;
+  box-shadow: 0 6px 20px rgba(79, 110, 245, 0.4) !important;
+  transform: translateY(-2px) !important;
+}
+
+.checkout-dialog .el-button--primary:active {
+  transform: translateY(0) !important;
+}
+
+.checkout-dialog .el-button--primary.is-disabled {
+  background: #c0c4cc !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 取消按钮样式 */
+.checkout-dialog .el-button--default {
+  border-color: #e0e0e8 !important;
+  color: #5a5a7a !important;
+  font-weight: 500 !important;
+}
+
+.checkout-dialog .el-button--default:hover {
+  border-color: #4f6ef5 !important;
+  color: #4f6ef5 !important;
+  background: #f5f7ff !important;
 }
 
 @media (max-width: 768px) {

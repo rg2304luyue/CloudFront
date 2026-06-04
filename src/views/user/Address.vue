@@ -66,7 +66,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -83,6 +83,7 @@ import regionData from '@/data/regions.json'
 
 const addresses = ref([])
 const loading = ref(true)
+const saving = ref(false)
 const dialogVisible = ref(false)
 const editingAddr = ref(null)
 const formRef = ref(null)
@@ -145,22 +146,33 @@ async function handleSave() {
   }
   const v = await formRef.value.validate().catch(() => false)
   if (!v) return
-  if (editingAddr.value?.id) {
-    await updateAddress(editingAddr.value.id, { ...form })
-  } else {
-    await addAddress(form)
+  saving.value = true
+  try {
+    if (editingAddr.value?.id) {
+      await updateAddress(editingAddr.value.id, { ...form })
+    } else {
+      await addAddress(form)
+    }
+    ElMessage.success('已保存')
+    dialogVisible.value = false
+    fetchAddresses()
+  } catch {} finally {
+    saving.value = false
   }
-  ElMessage.success('已保存')
-  dialogVisible.value = false
-  fetchAddresses()
 }
 
+const deletingId = ref(null)
 function handleDelete(id) {
   ElMessageBox.confirm('确定删除该地址？', '提示', { type: 'warning' })
     .then(async () => {
-      await deleteAddress(id)
-      ElMessage.success('已删除')
-      fetchAddresses()
+      deletingId.value = id
+      try {
+        await deleteAddress(id)
+        ElMessage.success('已删除')
+        fetchAddresses()
+      } catch {} finally {
+        deletingId.value = null
+      }
     })
     .catch(() => {})
 }

@@ -70,13 +70,19 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - CloudMall` : 'CloudMall'
 
+  const userStore = useUserStore()
+
+  // 检查 token 状态：如果 localStorage 中没有 token 但 store 中认为已登录，则清除 store 状态
+  if (!isLoggedIn() && userStore.isLogin) {
+    userStore.logout()
+  }
+
   if (to.meta.requireAuth && !isLoggedIn()) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
   }
 
   if (to.meta.roles && to.meta.roles.length > 0) {
-    const userStore = useUserStore()
     const userRole = userStore.role || 'BUYER'
     if (!to.meta.roles.includes(userRole)) {
       next({ name: 'Forbidden' })

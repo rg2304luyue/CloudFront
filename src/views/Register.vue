@@ -82,7 +82,9 @@ async function handleRegister() {
     await userStore.register(form.username, form.password, form.nickname || form.username)
     ElMessage.success('注册成功，请登录')
     router.push('/login')
-  } catch {} finally {
+  } catch {
+    // 错误已由 request.js 响应拦截器处理（显示错误消息）
+  } finally {
     loading.value = false
   }
 }

@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPaymentByOrderNo } from '@/api/payment'
 import LoadingState from '@/components/LoadingState.vue'
@@ -61,8 +61,11 @@ const loading = ref(true)
 const resultType = ref('pending')
 const resultTitle = ref('')
 const resultDesc = ref('')
+const MAX_POLLS = 20 // 最多轮询 20 次（60 秒），防止无限轮询
+let pollTimer = null
+let pollCount = 0
 
-onMounted(async () => {
+async function checkPayment() {
   const orderNo = route.query.orderNo
   if (!orderNo) {
     resultType.value = 'fail'
@@ -71,22 +74,54 @@ onMounted(async () => {
     loading.value = false
     return
   }
+
+  pollCount++
+  if (pollCount > MAX_POLLS) {
+    stopPolling()
+    resultType.value = 'fail'
+    resultTitle.value = '支付超时'
+    resultDesc.value = '支付处理时间过长，请前往「我的订单」查看支付状态'
+    loading.value = false
+    return
+  }
+
   try {
     const res = await getPaymentByOrderNo(orderNo)
     if (res.data && res.data.status === 1) {
       resultType.value = 'success'
+      stopPolling()
     } else {
       resultType.value = 'pending'
       resultTitle.value = '支付处理中'
       resultDesc.value = '支付正在处理中，请稍后查看订单状态。如已扣款请勿重复支付。'
     }
   } catch {
+    // 网络错误不改变状态，继续轮询直到达到上限
     resultType.value = 'pending'
     resultTitle.value = '支付处理中'
     resultDesc.value = '请前往「我的订单」查看支付状态'
   } finally {
     loading.value = false
   }
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+onMounted(async () => {
+  await checkPayment()
+  // 如果是待支付状态，启动轮询（每 3 秒查询一次）
+  if (resultType.value === 'pending') {
+    pollTimer = setInterval(checkPayment, 3000)
+  }
+})
+
+onBeforeUnmount(() => {
+  stopPolling()
 })
 </script>
 

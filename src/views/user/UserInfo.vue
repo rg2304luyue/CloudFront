@@ -50,7 +50,7 @@
 
         <div class="field-actions">
           <template v-if="editing">
-            <button class="btn btn-primary" @click="save">保存</button>
+            <button class="btn btn-primary" @click="save" :disabled="saving">{{ saving ? '保存中...' : '保存' }}</button>
             <button class="btn btn-ghost" @click="editing = false">取消</button>
           </template>
           <template v-else>
@@ -78,6 +78,7 @@ import AvatarCropper from '@/components/AvatarCropper.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
+const saving = ref(false)
 const editing = ref(false)
 const applied = ref(false)
 const uploading = ref(false)
@@ -100,10 +101,15 @@ function startEdit() {
 }
 
 async function save() {
-  await updateUserInfo(form)
-  await userStore.fetchUserInfo()
-  ElMessage.success('已更新')
-  editing.value = false
+  saving.value = true
+  try {
+    await updateUserInfo(form)
+    await userStore.fetchUserInfo()
+    ElMessage.success('已更新')
+    editing.value = false
+  } catch {} finally {
+    saving.value = false
+  }
 }
 
 async function handleApply() {
@@ -111,7 +117,9 @@ async function handleApply() {
     await applySeller()
     ElMessage.success('申请已提交！')
     applied.value = true
-  } catch {}
+  } catch {
+    // 错误已由 request.js 响应拦截器处理（显示错误消息）
+  }
 }
 
 function onFileChange(e) {

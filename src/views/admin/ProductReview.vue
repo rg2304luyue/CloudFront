@@ -42,9 +42,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getPendingProducts, reviewProduct } from '@/api/product'
 import { ElMessage } from 'element-plus'
+import { usePolling } from '@/composables/usePolling'
 import PageHeader from '@/components/PageHeader.vue'
 
 const products = ref([])
@@ -52,13 +53,6 @@ const loading = ref(true)
 const page = ref(1)
 const size = ref(20)
 const total = ref(0)
-let timer = null
-
-onMounted(() => {
-  fetchData()
-  timer = setInterval(() => fetchData(true), 30000)
-})
-onBeforeUnmount(() => clearInterval(timer))
 
 async function fetchData(silent = false) {
   if (!silent) loading.value = true
@@ -80,4 +74,9 @@ async function handleReview(product, approved) {
     products.value = products.value.filter(p => p.id !== product.id)
   } catch {}
 }
+
+onMounted(() => fetchData())
+
+// 30 秒轮询 + visibility 自动暂停/恢复
+usePolling(() => fetchData(true))
 </script>

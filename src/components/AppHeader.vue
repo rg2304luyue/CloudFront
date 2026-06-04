@@ -71,6 +71,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { ElMessageBox } from 'element-plus'
+
 const router = useRouter()
 const userStore = useUserStore()
 const cartStore = useCartStore()
@@ -87,7 +88,6 @@ function handleCommand(cmd) {
   if (cmd === 'logout') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', { type: 'warning' }).then(() => {
       userStore.logout()
-      cartStore.clear()
       router.push('/home')
     }).catch(() => {})
   } else if (cmd === 'info') {

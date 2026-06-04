@@ -64,6 +64,8 @@ import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
 
+import { orderStatusText as statusText } from '@/constants/orderStatus'
+
 const router = useRouter()
 const { handlePay } = usePayment()
 const orders = ref([])
@@ -71,8 +73,6 @@ const loading = ref(true)
 const total = ref(0)
 const page = ref(1)
 const size = ref(10)
-
-import { orderStatusText as statusText } from '@/constants/orderStatus'
 
 onMounted(() => fetchOrders())
 

@@ -45,7 +45,6 @@
                   :src="form.mainImage"
                   fit="contain"
                   style="width:200px;height:150px;border:1px solid var(--border);border-radius:6px"
-                  @error="imgError = true"
                 >
                   <template #error>
                     <div class="img-error">图片加载失败</div>
@@ -89,7 +88,6 @@ const isEdit = computed(() => !!route.params.id)
 const formRef = ref(null)
 const submitting = ref(false)
 const categoryTree = ref([])
-const imgError = ref(false)
 const uploading = ref(false)
 const fileInput = ref(null)
 
@@ -109,7 +107,6 @@ const rules = {
 async function handleFileChange(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  imgError.value = false
   uploading.value = true
   try {
     const res = await uploadImage(file)
@@ -127,7 +124,6 @@ async function handleFileChange(e) {
 
 function clearImage() {
   form.mainImage = ''
-  imgError.value = false
 }
 
 onMounted(async () => {

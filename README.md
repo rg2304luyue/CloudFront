@@ -22,7 +22,7 @@ CloudFront/
 ├── vite.config.js                       # Vite 配置，/api 代理 → localhost:8080
 ├── package.json
 └── src/
-    ├── main.js                          # 入口：注册 Vue/Pinia/Router/ElementPlus/图标
+    ├── main.js                          # 入口：注册 Vue/Pinia/Router/ElementPlus/图标；显式导入命令式服务 CSS；显式导入命令式服务 CSS
     ├── App.vue                          # 根组件，挂载时恢复登录态
     │
     ├── api/                             # 后端 API 封装（按微服务拆分）
@@ -68,17 +68,19 @@ CloudFront/
     │
     ├── assets/
     │   ├── global.css                   # CSS 变量、重置、工具类、按钮体系、订单状态标签
+    │   ├── element-plus.css             # Element Plus 覆盖样式（z-index / MessageBox / Dialog）
     │   └── error-page.css               # 错误页公共样式（403/404/500 共用）
     │
     ├── data/
     │   └── regions.json                 # 中国省市区三级数据（供 el-cascader 使用）
     │
     ├── constants/
-    │   └── orderStatus.js               # 订单状态映射常量（3个页面共用）
+    │   └── orderStatus.js               # 订单状态映射 + ORDER_STATUS 命名常量
     │
     ├── composables/
-    │   └── usePayment.js                # 支付宝支付处理（OrderList/OrderDetail 共用）
-    │
+	    │   ├── usePayment.js                # 支付宝支付处理（同步开窗防拦截）
+	    │   ├── usePolling.js                # 通用轮询（interval + visibilitychange 自动暂停/恢复）
+	    │   └── usePagination.js             # 通用分页逻辑（供列表页使用）
     └── utils/
         ├── request.js                   # Axios 实例 + 请求/响应拦截器
         └── auth.js                      # localStorage 读写 Token/用户
@@ -180,7 +182,7 @@ App.vue onMounted
 AppHeader 退出按钮
   → ElMessageBox.confirm("确定退出?")
   → userStore.logout()      ← 清 token + userInfo
-  → cartStore.clear()       ← 清购物车
+  → cartStore.reset()       ← 清购物车（本地重置，避免 API 401）
   → router.push('/home')
 ```
 
@@ -251,16 +253,18 @@ AppHeader 退出按钮
 | `checkedCount` | checked 商品数量总和 |
 | `totalPrice` | checked 商品的 `price × quantity` 总和 |
 
-**Actions**：`fetchCart()`、`add()`、`updateQty()`、`toggleCheck()`、`remove()`、`clear()`
+**Actions**：`fetchCart()`、`add()`、`updateQty()`、`toggleCheck()`、`checkAll()`、`remove()`、`clear()`、`reset()`
 
 | Action | 行为 |
 |---|---|
 | `fetchCart()` | GET /api/cart → 赋值 `items`，失败则清空 |
 | `add(productId, qty)` | POST /api/cart/items → 自动 `fetchCart()` 同步 |
-| `updateQty(id, qty)` | PATCH /api/cart/items/:id → 自动 `fetchCart()` |
-| `toggleCheck(id, checked)` | PATCH /api/cart/items/:id/check → 自动 `fetchCart()`，用于全选/取消全选 |
-| `remove(productId)` | DELETE /api/cart/items/:id → 自动 `fetchCart()` |
-| `clear()` | DELETE /api/cart/items → 同时本地 `items = []`，避免额外请求 |
+| `updateQty(id, qty)` | 乐观更新：立即修改本地 quantity，失败回滚旧值 |
+| `toggleCheck(id, checked)` | 乐观更新：立即修改本地 checked，失败回滚 |
+| `checkAll(checked)` | PATCH /api/cart/items/check-all，乐观更新全部 checked，失败回滚 |
+| `remove(productId)` | 乐观更新：立即从本地删除，失败回滚还原 |
+| `clear()` | DELETE /api/cart/items → 本地 `items = []` |
+| `reset()` | 本地重置 `items = []`，不调 API（登出时使用，避免 401） |
 
 ---
 
@@ -318,6 +322,8 @@ updateQuantity(productId, quantity)    // PATCH /api/cart/items/:productId (JSON
 checkItem(productId, checked)          // PATCH /api/cart/items/:productId/check (JSON body)
 removeFromCart(productId)              // DELETE /api/cart/items/:productId
 clearCart()                            // DELETE /api/cart/items
+checkAllItems(checked)                   // PATCH /api/cart/items/check-all (JSON body)
+checkAllItems(checked)                   // PATCH /api/cart/items/check-all (JSON body)
 ```
 
 ### order.js
@@ -406,6 +412,8 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
         + 分类下拉(树形展平)
         排序下拉：默认排序 / 价格从低到高 / 价格从高到低 / 销量优先
         选分类/排序 → @change → search() → 重置 page=1 → fetchProducts()
+	        watch route.query.keyword → 已在列表页时搜索自动刷新（路由复用同一组件）
+	        watch route.query.keyword → 已在列表页时搜索自动刷新（路由复用同一组件）
 商品网格 → 4列，ProductCard 组件
 分页   → el-pagination，切换页码：
          初次加载：全屏 LoadingState → 数据就位
@@ -431,7 +439,7 @@ Hero Banner → 渐变背景 + "发现好物，品质生活" + 立即选购按�
 
 ```
 PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
-表格视图 → 表头/每行：勾选框 | 缩略图(72px) | 商品名 | 单价 | 数量(el-input-number) | 小计(price×quantity) | 删除
+表格视图 → 表头/每行：勾选框 | 缩略图(72px) | 商品名 | 单价 | 数量(el-input-number，独立防抖，避免多商品互锁) | 小计(price×quantity) | 删除
          行 hover 变背景色，缩略图和商品名可点击跳转商品详情
 全选     → 顶部勾选框 + 底栏全选复选框，支持半选状态（indeterminate）
          toggleAll → 遍历 items，逐个调用 toggleCheck
@@ -473,10 +481,10 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 
 ```
 支付宝付款完成 → 同步回跳到本页面（?orderNo=xxx）
-→ 调用 getPaymentByOrderNo() → 后端主动查支付宝确认交易状态
+→ 调用 getPaymentByOrderNo() → 后端主动查支付宝确认交易状态 → 前端每3秒轮询，最多60秒超时 → 前端每3秒轮询，最多60秒超时
 → 三态展示：
     成功(绿色图标) → "支付成功，将尽快为您发货"
-    处理中(橙色图标) → "支付处理中，请勿重复支付"
+    处理中(橙色图标 最多60秒) → "支付处理中，请勿重复支付"
     失败(红色图标) → 参数错误
 → 按钮：查看我的订单 / 返回首页
 ```
@@ -579,6 +587,7 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 ```js
 export const ORDER_STATUS_MAP = { 0: '待支付', 1: '已支付', 2: '已发货', 3: '已完成', 4: '已取消' }
 export function orderStatusText(status) { ... }  // 根据 code 返回中文文本
+export const ORDER_STATUS = { UNPAID: 0, PAID: 1, SHIPPED: 2, COMPLETED: 3, CANCELLED: 4 }
 ```
 
 ### usePayment.js（`composables/usePayment.js`）
@@ -587,191 +596,66 @@ export function orderStatusText(status) { ... }  // 根据 code 返回中文文�
 
 ```js
 function handlePay(orderNo)
-  → ElMessageBox 确认
-  → createAlipayPayment(orderNo) 获取支付表单 HTML
-  → window.open + document.write 在新窗口渲染支付页面
+  // Step 1: 先同步 window.open 打开空窗口（在用户点击上下文中，避免浏览器拦截弹窗）
+  // Step 2: ElMessageBox.confirm 确认支付
+  // Step 3: 确认 → createAlipayPayment(orderNo) 获取支付表单 HTML
+  //         → w.document.write(payForm) 渲染支付页面
+  // Step 4: 取消或失败 → w.close() 关闭窗口
 ```
 
-### error-page.css（`assets/error-page.css`）
+### usePolling.js（`composables/usePolling.js`）
 
-403、404、500 三个错误页面的公共样式：`.error-root` 全屏居中布局、`.error-code` 120px 渐变数字、`.error-card` 内容卡片、`.error-actions` 按钮组。
-
----
-
-## 公共组件
-
-### ProductCard（`components/ProductCard.vue`）
-
-接收 `product` prop，用于首页热门商品网格和商品列表：
-
-```
-┌────────────────────────────┐
-│  商品主图 (el-image, cover)  │ ← 210px 高，加载失败显示图标占位
-│  card-actions 插槽区域       │ ← hover 时从底部渐变淡入
-├────────────────────────────┤
-│  商品名称(单行省略)          │
-│  ¥价格(红色大字)    已售 N件  │
-└────────────────────────────┘
-```
-
-- hover 动画：卡片上移 4px + 边框变蓝 + 阴影放大 + 图片 scale(1.05)
-- `card-actions` slot：可插入操作按钮，点击不冒泡
-
-### PageHeader（`components/PageHeader.vue`）
-
-用于购物车、订单列表等页面的标题栏：
+被 ProductManage、SellerOrderManage、ProductReview 三个管理页面引用，封装轮询逻辑：
 
 ```js
-props: {
-  title: String (必填),           // 主标题
-  subtitle: String (可选),        // 副标题，灰色小字
-  showBack: Boolean (默认 false), // 显示返回按钮
-  backTo: String | Object (可选)   // 返回路径，不传则 router.back()
-}
-# actions slot：右侧操作区域
+export function usePolling(pollFn, { interval = 30000 })
+  // onMounted: 启动 setInterval(pollFn, interval)
+  // visibilitychange: 页面隐藏时 clearInterval，恢复时立即执行 pollFn 并重启计时
+  // onBeforeUnmount: 清理计时器和事件监听
+  // 返回 { start, stop } 供手动控制
+```
+
+### usePagination.js（`composables/usePagination.js`）
+
+通用分页 composable，可供任意列表页使用：
+
+```js
+export function usePagination(fetchFn, { defaultSize = 10, immediate = true })
+  // 返回: { page, size, total, list, loading, fetchData, onPageChange, reset }
 ```
 
 ---
 
-## CSS 变量体系（`assets/global.css`）
+## 近期更新（2026-06-04）
 
-### Design Tokens
+### 架构增强
 
-```css
-:root {
-  /* 品牌色 */
-  --primary: #4f6ef5;            /* 主题蓝 */
-  --primary-light: #eff2ff;      /* 主题浅底 */
-  --primary-dark: #3b54d4;       /* 主题深色 */
-  --primary-gradient: linear-gradient(135deg, #4f6ef5, #6c5ce7);
+| 类别 | 变更 | 涉及文件 |
+|------|------|----------|
+| 命令式服务 CSS | 显式导入 MessageBox / Message / Notification CSS，修复按需加载遗漏 | `main.js` |
+| 弹窗防拦截 | 支付弹窗改为先同步 `window.open` 再异步加载表单 | `composables/usePayment.js` |
+| 通用轮询 | 提取 3 个管理页面的重复轮询逻辑为 `usePolling` composable | `composables/usePolling.js`、3 个管理页面 |
+| 购物车防抖 | 每个商品独立 Map<id, timer> 计时器，避免多商品互锁永久禁用 | `views/cart/Cart.vue` |
+| 乐观更新 | cart store 的 updateQty / toggleCheck / checkAll / remove 改为乐观更新 + 失败回滚 | `stores/cart.js` |
+| 购物车批量 | 新增 `checkAllItems` API + cart store `checkAll` / `reset` 方法 | `api/cart.js`、`stores/cart.js` |
 
-  /* 语义色 */
-  --danger: #e8595b;             /* 危险红（价格/删除） */
-  --danger-light: #fef2f2;       /* 危险浅底 */
-  --danger-dark: #d94a4c;
-  --success: #22c55e;            /* 成功绿 */
-  --success-light: #f0fdf6;
-  --warning: #f59e0b;            /* 警告橙 */
-  --warning-light: #fffbeb;
+### Bug 修复
 
-  /* 文字 */
-  --text: #1a1a2e;               /* 主文字 */
-  --text-secondary: #5a5a7a;     /* 次要文字 */
-  --text-muted: #9c9cb8;         /* 弱化文字 */
+| 问题 | 修复 |
+|------|------|
+| 登出 MessageBox 被挤到左下角 | `main.js` 显式导入 Element Plus 命令式服务 CSS |
+| 支付结果无限轮询 | 添加最大轮询次数限制（20 次 = 60 秒），超时显示错误 |
+| 立即购买失败仍跳转购物车 | `sessionStorage` 标记仅在 `cartStore.add()` 成功后写入 |
+| ProductList 搜索路由复用不刷新 | 新增 `watch(route.query.keyword)` 监听路由变化 |
+| 登出直接赋值 `cartStore.items = []` | 新增 `cartStore.reset()` 方法 |
+| `imgError` ref 死代码 | 从 ProductForm.vue 移除 |
+| OrderList import 语句位置 | 移至所有 import 声明之后 |
 
-  /* 背景 */
-  --bg: #f5f6fa;                 /* 页面背景 */
-  --bg-card: #ffffff;            /* 卡片背景 */
-  --bg-hover: #f8f9fc;           /* hover 背景 */
+### UI/UX 改进
 
-  /* 边框 / 阴影 */
-  --border: #e8e8f0;
-  --border-light: #f0f0f5;
-  --shadow-xs / --shadow-sm / --shadow / --shadow-md / --shadow-lg
-
-  /* 圆角 */
-  --radius-sm: 6px; --radius: 10px; --radius-lg: 14px;
-  --radius-xl: 20px; --radius-full: 9999px;
-
-  /* 过渡 */
-  --transition-fast: .15s ease;
-  --transition: .2s ease;
-  --transition-slow: .3s cubic-bezier(.4,0,.2,1);
-}
-```
-
-### 工具类
-
-| 类名 | 用途 |
-|---|---|
-| `.page-container` | padding 28px 32px, max-width 1260px, margin 0 auto |
-| `.page-title` | 20px bold, letter-spacing -.3px |
-| `.card` | 白色背景 + 边框 + 圆角，hover 变蓝色边框 + 阴影 |
-| `.btn` / `.btn-primary` / `.btn-danger` / `.btn-ghost` / `.btn-outline-danger` | 按钮体系 |
-| `.btn-sm` / `.btn-lg` | 按钮尺寸变体 |
-| `.badge` | 圆角胶囊标签 |
-| `.text-muted` / `.text-secondary` / `.text-danger` / `.text-primary` / `.text-success` | 文字颜色 |
-| `.truncate` | 单行省略（overflow + text-overflow + nowrap） |
-| `.grid-2` / `.grid-3` / `.grid-4` | 响应式网格（自动适配断点） |
-| `.mt-1`~`.mt-3` / `.mb-1`~`.mb-3` | 间距工具类 |
-| `.status-0` ~ `.status-4` | 订单状态徽标颜色（待支付/已支付/已发货/已完成/已取消） |
-
----
-
-## 快速开始
-
-```bash
-npm install
-npm run dev       # http://localhost:4173, /api → localhost:8080
-npm run build     # 生产构建 → dist/
-```
-
----
-
-## 开发工具配置
-
-### MySQL MCP 服务器（`.mcp.json`）
-
-项目配置了 MySQL MCP 服务器，让 Claude Code 能直接查询后端数据库：
-
-```json
-{
-  "mcpServers": {
-    "ubuntu-mysql": {
-      "type": "stdio",
-      "command": "node",
-      "args": [".claude/mcp-servers/mysql-cli-server.mjs"],
-      "env": {
-        "MYSQL_HOST": "192.168.91.130",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "root",
-        "MYSQL_PASSWORD": "root",
-        "MYSQL_DB": "cloud_mall"
-      }
-    }
-  }
-}
-```
-
-- 自制 Node.js MCP 服务器，通过本地 `mysql` CLI 连接远程数据库
-- 绕过 `mysql2` npm 驱动在 Node 25.x 上的兼容问题
-- 仅允许只读查询（SELECT），禁止 INSERT/UPDATE/DELETE
-- **`.mcp.json` 已加入 `.gitignore`**（含数据库密码，不提交）
-
-### Claude Code 配置（`.claude/`）
-
-```
-.claude/
-├── settings.json           # PreToolUse Hook：拦截 .env 文件访问
-├── mcp-servers/
-│   └── mysql-cli-server.mjs  # MySQL MCP 服务器脚本
-```
-
-- **`settings.json`**：引用 CloudBack 的 `.env` 安全 Hook，从任何目录阻止读取 `.env` 文件
-- **`skills/`**：（可选）项目级 Claude Code Skills
-- **`settings.local.json`**：个人本地覆盖配置（已 gitignore）
-
-确保后端 7 个服务已在虚拟机启动，Gateway 8080 可访问。
-
----
-
-## 常见问题
-
-| 现象 | 原因 | 解决 |
-|---|---|---|
-| API 500 | 对应后端服务未启动或 Nacos 注册失败 | 检查 Nacos 服务列表，确认所有服务健康 |
-| 页面空白/路由不跳转 | 后端返回非 JSON 格式 | 检查 Vite 代理配置，确认 Gateway 端口正确 |
-| 图片加载失败 | 图片 URL 不可用或 MinIO 未启动 | 确认 MinIO 容器运行中，Bucket 已创建并有公开读策略 |
-| 头像/商品图上传失败 | MinIO 容器未启动或网络不通 | `docker compose up -d minio`，检查 9000 端口 |
-| 裁剪后头像模糊 | Canvas 输出尺寸不够 | 已固定 300×300，质量 0.85 |
-| 审核/管理页状态不更新 | 之前需要手动刷新 | 已添加 30s 静默轮询，自动拉取最新状态 |
-| 改角色后菜单没变 | JWT 中 role 仍是旧值 | 退出重新登录获取新 JWT |
-| 下单后购物车没清空 | 后端 Feign 调用 cart/clear 失败 | 检查 cloud-cart 服务是否启动 |
-| 下拉框选分类无反应 | 前端未绑定 change 事件 | 确认 @change="search" 已添加 |
-| 选父分类查不到商品 | 之前只精确匹配分类 ID | 后端已改为递归收集子分类 ID |
-| 订单显示待支付但支付宝已扣款 | 异步通知无法到达本地 | 查询支付记录时后端主动查支付宝确认状态 |
-| 支付后跳转"localhost拒绝连接" | 前端端口不是默认4173，或未启动 | 确认 Vite 端口，更新 ALIPAY_RETURN_URL |
-| 点击支付后弹出支付宝错误页 | return_url 格式被支付宝拒绝 | 使用前端直连地址而非网关地址 |
-| 裁剪头像周围有黑框 | Canvas 未裁剪为圆形且 JPEG 不支持透明 | 已修复：白色填充 + 圆形 clip 路径 + clamp 边界 |
-| 裁剪头像位置偏上 | 计算未考虑 object-fit:contain 留白 | 已修复：正确映射 CSS 盒模型→源图像素坐标 |
-| 顶栏不显示头像 | 未上传过头像 | 上传后 el-avatar :src 绑定 avatar URL，无头像回退图标 |
+| 改进 | 涉及页面 |
+|------|----------|
+| Home 页面 API 失败显示错误状态 + 重试按钮 | `views/Home.vue` |
+| 地址保存/删除按钮添加 loading 状态 | `views/user/Address.vue` |
+| 用户信息保存按钮添加 loading + disabled 状态 | `views/user/UserInfo.vue` |
+| 订单状态新增 `ORDER_STATUS` 命名常量 | `constants/orderStatus.js` |
