@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { getToken, removeToken } from './auth'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 const request = axios.create({
   baseURL: '/api',
@@ -28,7 +29,7 @@ request.interceptors.response.use(
       // 仅 401 认证失败时清除 token
       if (res.code === 401) {
         removeToken()
-        window.location.href = '/login'
+        router.push('/home')
       }
       return Promise.reject(new Error(res.message))
     }
@@ -39,7 +40,7 @@ request.interceptors.response.use(
       const status = error.response.status
       if (status === 401) {
         removeToken()
-        window.location.href = '/login'
+        router.push('/home')
       } else if (status === 403) {
         ElMessage.error('没有访问权限')
       } else if (status === 500) {

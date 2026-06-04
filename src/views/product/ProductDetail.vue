@@ -1,69 +1,77 @@
 <template>
   <div class="page-container">
     <LoadingState v-if="loading" />
-    <div v-else-if="product" class="detail">
-      <!-- Image Section -->
-      <div class="detail-gallery">
-        <div class="gallery-main">
-          <el-image
-            v-if="product.mainImage"
-            :src="product.mainImage"
-            fit="cover"
-            class="main-image"
-          >
-            <template #error>
-              <div class="img-placeholder"><el-icon :size="64"><PictureFilled /></el-icon></div>
-            </template>
-          </el-image>
-          <div v-else class="img-placeholder">
-            <el-icon :size="64"><PictureFilled /></el-icon>
+    <template v-else-if="product">
+      <!-- Back Button -->
+      <button class="btn-back" @click="router.back()">
+        <el-icon :size="16"><ArrowLeft /></el-icon>
+        <span>返回</span>
+      </button>
+
+      <div class="detail">
+        <!-- Image Section -->
+        <div class="detail-gallery">
+          <div class="gallery-main">
+            <el-image
+              v-if="product.mainImage"
+              :src="product.mainImage"
+              fit="cover"
+              class="main-image"
+            >
+              <template #error>
+                <div class="img-placeholder"><el-icon :size="64"><PictureFilled /></el-icon></div>
+              </template>
+            </el-image>
+            <div v-else class="img-placeholder">
+              <el-icon :size="64"><PictureFilled /></el-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="detail-info">
+          <div class="info-header">
+            <h1>{{ product.name }}</h1>
+            <p class="info-desc">{{ product.description || '暂无商品描述' }}</p>
+          </div>
+
+          <div class="price-card">
+            <div class="price-row">
+              <span class="price-label">价格</span>
+              <span class="price-value">
+                <span class="price-symbol">¥</span>{{ product.price }}
+              </span>
+            </div>
+            <div class="price-meta">
+              <span>库存 <strong>{{ product.stock }}</strong></span>
+              <span class="meta-divider">|</span>
+              <span>已售 <strong>{{ product.sales || 0 }}</strong> 件</span>
+            </div>
+          </div>
+
+          <div class="quantity-row">
+            <span class="qty-label">数量</span>
+            <el-input-number
+              v-model="quantity"
+              :min="1"
+              :max="product.stock"
+              size="large"
+              class="qty-input"
+            />
+            <span v-if="product.stock <= 10" class="low-stock">仅剩 {{ product.stock }} 件</span>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-outline-danger btn-lg" @click="addToCart">
+              <el-icon :size="18"><ShoppingCart /></el-icon>加入购物车
+            </button>
+            <button class="btn btn-primary btn-lg" @click="buyNow">
+              立即购买
+            </button>
           </div>
         </div>
       </div>
-
-      <!-- Info Section -->
-      <div class="detail-info">
-        <div class="info-header">
-          <h1>{{ product.name }}</h1>
-          <p class="info-desc">{{ product.description || '暂无商品描述' }}</p>
-        </div>
-
-        <div class="price-card">
-          <div class="price-row">
-            <span class="price-label">价格</span>
-            <span class="price-value">
-              <span class="price-symbol">¥</span>{{ product.price }}
-            </span>
-          </div>
-          <div class="price-meta">
-            <span>库存 <strong>{{ product.stock }}</strong></span>
-            <span class="meta-divider">|</span>
-            <span>已售 <strong>{{ product.sales || 0 }}</strong> 件</span>
-          </div>
-        </div>
-
-        <div class="quantity-row">
-          <span class="qty-label">数量</span>
-          <el-input-number
-            v-model="quantity"
-            :min="1"
-            :max="product.stock"
-            size="large"
-            class="qty-input"
-          />
-          <span v-if="product.stock <= 10" class="low-stock">仅剩 {{ product.stock }} 件</span>
-        </div>
-
-        <div class="action-buttons">
-          <button class="btn btn-outline-danger btn-lg" @click="addToCart">
-            <el-icon :size="18"><ShoppingCart /></el-icon>加入购物车
-          </button>
-          <button class="btn btn-primary btn-lg" @click="buyNow">
-            立即购买
-          </button>
-        </div>
-      </div>
-    </div>
+    </template>
 
     <EmptyState v-else description="商品不存在" @action="$router.back()" action-text="返回" />
   </div>
@@ -113,6 +121,26 @@ async function buyNow() {
 </script>
 
 <style scoped>
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  margin-bottom: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-back:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
 .detail {
   display: flex;
   gap: 40px;
