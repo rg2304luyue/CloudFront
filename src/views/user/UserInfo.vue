@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { updateUserInfo, applySeller, uploadAvatar } from '@/api/user'
 import { ElMessage } from 'element-plus'
@@ -84,6 +84,13 @@ const applied = ref(false)
 const uploading = ref(false)
 const fileInput = ref(null)
 const cropFile = ref(null)
+
+onMounted(async () => {
+  if (!userStore.userInfo && userStore.isLogin) {
+    loading.value = true
+    try { await userStore.fetchUserInfo() } finally { loading.value = false }
+  }
+})
 
 const form = reactive({ nickname: '', phone: '', email: '' })
 
@@ -107,7 +114,7 @@ async function save() {
     await userStore.fetchUserInfo()
     ElMessage.success('已更新')
     editing.value = false
-  } catch {} finally {
+  } catch { ElMessage.error('保存失败') } finally {
     saving.value = false
   }
 }

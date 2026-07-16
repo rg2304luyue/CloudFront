@@ -67,7 +67,7 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - CloudMall` : 'CloudMall'
 
   const userStore = useUserStore()
@@ -80,6 +80,20 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requireAuth && !isLoggedIn()) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return
+  }
+
+  // 登录状态下如果 userInfo 尚未加载，先等待加载完成
+  if (isLoggedIn() && !userStore.userInfo) {
+    try {
+      await userStore.fetchUserInfo()
+    } catch {
+      if (!isLoggedIn()) {
+        next({ name: 'Login', query: { redirect: to.fullPath } })
+      } else {
+        next({ name: 'ServerError' })
+      }
+      return
+    }
   }
 
   if (to.meta.roles && to.meta.roles.length > 0) {

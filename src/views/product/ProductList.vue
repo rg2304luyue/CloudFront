@@ -31,6 +31,7 @@
 
     <!-- States (only show full-page loading on initial load) -->
     <LoadingState v-if="loading && products.length === 0" />
+    <EmptyState v-else-if="loadFailed" description="商品加载失败，请检查网络后重试" show-action @action="fetchProducts" action-text="重新加载" />
     <EmptyState v-else-if="!loading && products.length === 0" description="没有找到商品，试试其他关键词" show-action @action="keyword='';categoryId=null;search()" action-text="清除筛选" />
 
     <!-- Product Grid -->
@@ -64,6 +65,7 @@ const route = useRoute()
 const products = ref([])
 const loading = ref(true)
 const switchingPage = ref(false)
+const loadFailed = ref(false)
 const total = ref(0)
 const page = ref(1)
 const size = ref(12)
@@ -71,6 +73,7 @@ const keyword = ref('')
 const categoryId = ref(null)
 const sortBy = ref('')
 const flatCategories = ref([])
+let latestRequest = 0
 
 onMounted(async () => {
   await loadCategories()
@@ -84,10 +87,8 @@ onMounted(async () => {
 
 // 已在列表页时再次搜索（路由复用同一组件，onMounted 不触发）
 watch(() => route.query.keyword, (newKw) => {
-  if (newKw) {
-    keyword.value = newKw
-    search()
-  }
+  keyword.value = newKw || ''
+  search()
 })
 
 function flattenCategories(cats, prefix = '') {
@@ -111,6 +112,8 @@ async function loadCategories() {
 }
 
 async function fetchProducts() {
+  const requestId = ++latestRequest
+  loadFailed.value = false
   if (products.value.length === 0) {
     loading.value = true
   } else {
@@ -125,11 +128,19 @@ async function fetchProducts() {
     }
     if (sortBy.value) params.sortBy = sortBy.value
     const r = await getProductList(params)
-    products.value = r.data || []
-    total.value = r.total || 0
+    if (requestId === latestRequest) {
+      products.value = r.data || []
+      total.value = r.total || 0
+    }
+  } catch {
+    if (requestId === latestRequest && products.value.length === 0) {
+      loadFailed.value = true
+    }
   } finally {
-    loading.value = false
-    switchingPage.value = false
+    if (requestId === latestRequest) {
+      loading.value = false
+      switchingPage.value = false
+    }
   }
 }
 

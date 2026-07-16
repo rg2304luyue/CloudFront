@@ -3,6 +3,15 @@ import { getToken, removeToken } from './auth'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 
+function handleUnauthorized() {
+  removeToken()
+  window.dispatchEvent(new Event('cloud-auth-expired'))
+
+  if (router.currentRoute.value.name !== 'Login') {
+    router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } })
+  }
+}
+
 const request = axios.create({
   baseURL: '/api',
   timeout: 15000
@@ -28,8 +37,7 @@ request.interceptors.response.use(
       ElMessage.error(res.message || '请求失败')
       // 仅 401 认证失败时清除 token
       if (res.code === 401) {
-        removeToken()
-        router.push('/home')
+        handleUnauthorized()
       }
       return Promise.reject(new Error(res.message))
     }
@@ -39,8 +47,7 @@ request.interceptors.response.use(
     if (error.response) {
       const status = error.response.status
       if (status === 401) {
-        removeToken()
-        router.push('/home')
+        handleUnauthorized()
       } else if (status === 403) {
         ElMessage.error('没有访问权限')
       } else if (status === 500) {

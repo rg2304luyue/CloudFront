@@ -62,11 +62,11 @@
           </div>
 
           <div class="action-buttons">
-            <button class="btn btn-outline-danger btn-lg" @click="addToCart">
-              <el-icon :size="18"><ShoppingCart /></el-icon>加入购物车
+            <button class="btn btn-outline-danger btn-lg" :disabled="product.stock <= 0 || adding" @click="addToCart">
+              <el-icon :size="18"><ShoppingCart /></el-icon>{{ product.stock <= 0 ? '已售罄' : '加入购物车' }}
             </button>
-            <button class="btn btn-primary btn-lg" @click="buyNow">
-              立即购买
+            <button class="btn btn-primary btn-lg" :disabled="product.stock <= 0 || adding" @click="buyNow">
+              {{ product.stock <= 0 ? '已售罄' : '立即购买' }}
             </button>
           </div>
         </div>
@@ -95,6 +95,7 @@ const userStore = useUserStore()
 const product = ref(null)
 const loading = ref(true)
 const quantity = ref(1)
+const adding = ref(false)
 
 onMounted(async () => {
   try {
@@ -110,8 +111,13 @@ async function addToCart() {
     router.push('/login')
     return
   }
-  await cartStore.add(product.value.id, quantity.value)
-  ElMessage.success('已添加到购物车')
+  adding.value = true
+  try {
+    await cartStore.add(product.value.id, quantity.value)
+    ElMessage.success('已添加到购物车')
+  } finally {
+    adding.value = false
+  }
 }
 
 async function buyNow() {
@@ -119,6 +125,7 @@ async function buyNow() {
     router.push('/login')
     return
   }
+  adding.value = true
   try {
     await cartStore.add(product.value.id, quantity.value)
     // 仅在添加成功后存储标记，确保购物车页能正确定位该商品
@@ -126,6 +133,8 @@ async function buyNow() {
     router.push('/cart')
   } catch {
     ElMessage.error('操作失败，请重试')
+  } finally {
+    adding.value = false
   }
 }
 </script>

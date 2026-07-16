@@ -33,7 +33,7 @@
         <el-form-item label="父分类">
           <el-tree-select
             v-model="catForm.parentId"
-            :data="categoryTree"
+            :data="filteredTree"
             :props="{ label: 'name', value: 'id', children: 'children' }"
             placeholder="无（顶级分类）"
             style="width:100%"
@@ -65,6 +65,17 @@ const dialogVisible = ref(false)
 const editingCat = ref(null)
 const categoryTree = ref([])
 const catForm = reactive({ name: '', parentId: null, sort: 0 })
+
+const filteredTree = computed(() => {
+  if (!editingCat.value?.id) return categoryTree.value
+  function filterNodes(nodes) {
+    return nodes.filter(n => n.id !== editingCat.value.id).map(n => ({
+      ...n,
+      children: n.children ? filterNodes(n.children) : []
+    }))
+  }
+  return filterNodes(categoryTree.value)
+})
 
 const flatCategories = computed(() => {
   const result = []

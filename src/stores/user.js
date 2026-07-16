@@ -30,9 +30,12 @@ export const useUserStore = defineStore('user', () => {
       const res = await getUserInfo()
       userInfo.value = res.data
       setUser(res.data)
-    } catch {
+    } catch (error) {
       // Token 失效
-      logout()
+      if (error?.response?.status === 401 || !getToken()) {
+        logout()
+      }
+      throw error
     }
   }
 

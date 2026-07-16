@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
@@ -61,6 +61,12 @@ const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
 const form = reactive({ username: '', password: '', confirmPassword: '', nickname: '' })
+
+watch(() => form.password, () => {
+  if (formRef.value && form.confirmPassword) {
+    formRef.value.validateField('confirmPassword')
+  }
+})
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],

@@ -9,15 +9,49 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
  */
 export function usePolling(pollFn, { interval = 30000 } = {}) {
   const timer = ref(null)
+  let running = false
+  let stopped = true
+  let scheduleVersion = 0
+
+  async function run() {
+    if (running || stopped) return
+
+    running = true
+    try {
+      await pollFn()
+    } catch {
+      // Individual screens own their error state. Keep the polling loop alive.
+    } finally {
+      running = false
+    }
+  }
+
+  function schedule() {
+    if (stopped) return
+    const version = scheduleVersion
+
+    timer.value = setTimeout(async () => {
+      if (stopped || version !== scheduleVersion) return
+      timer.value = null
+      await run()
+      if (!stopped && version === scheduleVersion) {
+        schedule()
+      }
+    }, interval)
+  }
 
   function start() {
     stop()
-    timer.value = setInterval(pollFn, interval)
+    stopped = false
+    scheduleVersion++
+    schedule()
   }
 
   function stop() {
+    stopped = true
+    scheduleVersion++
     if (timer.value) {
-      clearInterval(timer.value)
+      clearTimeout(timer.value)
       timer.value = null
     }
   }
@@ -26,8 +60,8 @@ export function usePolling(pollFn, { interval = 30000 } = {}) {
     if (document.hidden) {
       stop()
     } else {
-      pollFn()
       start()
+      void run()
     }
   }
 

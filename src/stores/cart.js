@@ -9,17 +9,19 @@ export const useCartStore = defineStore('cart', () => {
   const items = ref([])
   const checkedCount = computed(() => items.value.filter(i => i.checked).length)
   const totalPrice = computed(() =>
-    items.value
-      .filter(i => i.checked)
-      .reduce((sum, i) => sum + i.price * i.quantity, 0)
+    Math.round(items.value.filter(i => i.checked).reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100
   )
 
   async function fetchCart() {
     try {
       const res = await getCartList()
       items.value = res.data || []
-    } catch {
-      items.value = []
+    } catch (e) {
+      // Only clear on auth failure (401), preserve items on network errors
+      if (e?.response?.status === 401 || e?.message?.includes("401")) {
+        items.value = []
+      }
+      // Other errors: keep existing items, let the interceptor show the error toast
     }
   }
 
@@ -28,16 +30,18 @@ export const useCartStore = defineStore('cart', () => {
     await fetchCart()
   }
 
-  async function updateQty(productId, quantity) {
+  async function updateQty(productId, quantity, rollbackQuantity) {
     // 乐观更新
     const item = items.value.find(i => i.productId === productId)
     if (!item) return
-    const oldQty = item.quantity
+    const oldQty = rollbackQuantity ?? item.quantity
     item.quantity = quantity
     try {
       await updateQuantity(productId, quantity)
     } catch {
-      item.quantity = oldQty
+      if (item.quantity === quantity) {
+        item.quantity = oldQty
+      }
       throw new Error('更新失败')
     }
   }

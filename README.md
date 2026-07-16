@@ -323,7 +323,6 @@ checkItem(productId, checked)          // PATCH /api/cart/items/:productId/check
 removeFromCart(productId)              // DELETE /api/cart/items/:productId
 clearCart()                            // DELETE /api/cart/items
 checkAllItems(checked)                   // PATCH /api/cart/items/check-all (JSON body)
-checkAllItems(checked)                   // PATCH /api/cart/items/check-all (JSON body)
 ```
 
 ### order.js
@@ -659,3 +658,41 @@ export function usePagination(fetchFn, { defaultSize = 10, immediate = true })
 | 地址保存/删除按钮添加 loading 状态 | `views/user/Address.vue` |
 | 用户信息保存按钮添加 loading + disabled 状态 | `views/user/UserInfo.vue` |
 | 订单状态新增 `ORDER_STATUS` 命名常量 | `constants/orderStatus.js` |
+
+---
+
+## 2026-07 Reliability Update
+
+### Frontend state behavior
+
+- **Authentication:** every API `401` clears local token, Pinia user state, and cart state before redirecting to `/login`. A failed profile request only logs the user out for an actual authentication failure; network and server failures are surfaced to the caller instead of being reported as a successful login.
+- **Cart quantity:** each product uses its own debounced update. The UI keeps the last server-confirmed quantity as the rollback value, and pending changes are submitted when the cart page is left.
+- **Order and product lists:** initial-load failures show a retry state instead of an empty list. Background order refreshes run every 15 seconds without full-page loading flicker, stale responses are ignored, and polling pauses while the page is hidden.
+- **Payment result:** `/payment/result?orderNo=...` performs sequential checks at a three-second interval, for at most 20 checks. It never overlaps requests, shows `success` for payment status `1`, shows a closed-transaction result for status `2`, and otherwise directs the user to the order list after timeout.
+
+### UI and responsive behavior
+
+- Global product search is available before login.
+- Below `768px`, the sidebar is hidden so the content area remains usable; the compact header keeps search, cart, and account access available.
+- Product cards use a stable image aspect ratio and support keyboard activation with `Enter` and `Space`.
+- The checkout dialog uses `min(560px, calc(100vw - 32px))` and no longer relies on absolute centering overrides.
+
+### Local verification
+
+```bash
+npm install
+npm run dev
+npm run build
+```
+
+`npm run dev` serves the client on the Vite local URL (normally `http://localhost:5173/`). The development proxy still expects the CloudBack gateway at `/api`; start the backend and its configured middleware before testing login, cart, orders, or payment.
+
+### Payment recovery note
+
+The browser return page is only one confirmation path. If the return is interrupted, do not repeatedly submit the Alipay form. Open the order list or payment-result route again after the payment service has recovered; CloudBack now performs server-side reconciliation for recent pending records as well.
+
+### Clarifications for earlier sections
+
+- `cloud_user` is a local cache only. Startup still verifies the token by fetching `/api/users/me` before treating user information or roles as current.
+- `cartStore.fetchCart()` clears items on authentication failure only. It preserves existing cart data for transient network or server failures.
+- `usePolling` waits for a poll request to settle before scheduling the next `setTimeout`; it is not a raw `setInterval` loop.

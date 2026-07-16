@@ -54,7 +54,6 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPaymentByOrderNo } from '@/api/payment'
-import LoadingState from '@/components/LoadingState.vue'
 
 const route = useRoute()
 const loading = ref(true)
@@ -64,8 +63,13 @@ const resultDesc = ref('')
 const MAX_POLLS = 20 // 最多轮询 20 次（60 秒），防止无限轮询
 let pollTimer = null
 let pollCount = 0
+let polling = false
+let destroyed = false
 
 async function checkPayment() {
+  if (polling || destroyed) return
+  pollTimer = null
+
   const orderNo = route.query.orderNo
   if (!orderNo) {
     resultType.value = 'fail'
@@ -75,9 +79,7 @@ async function checkPayment() {
     return
   }
 
-  pollCount++
-  if (pollCount > MAX_POLLS) {
-    stopPolling()
+  if (pollCount >= MAX_POLLS) {
     resultType.value = 'fail'
     resultTitle.value = '支付超时'
     resultDesc.value = '支付处理时间过长，请前往「我的订单」查看支付状态'
@@ -85,10 +87,18 @@ async function checkPayment() {
     return
   }
 
+  polling = true
+  pollCount++
   try {
     const res = await getPaymentByOrderNo(orderNo)
-    if (res.data && res.data.status === 1) {
+    const status = Number(res.data?.status)
+    if (status === 1) {
       resultType.value = 'success'
+      stopPolling()
+    } else if (status === 2) {
+      resultType.value = 'fail'
+      resultTitle.value = '交易已关闭'
+      resultDesc.value = '该笔支付已关闭，请回到订单页面查看或重新下单。'
       stopPolling()
     } else {
       resultType.value = 'pending'
@@ -102,25 +112,33 @@ async function checkPayment() {
     resultDesc.value = '请前往「我的订单」查看支付状态'
   } finally {
     loading.value = false
+    polling = false
+    if (resultType.value === 'pending' && !destroyed) {
+      if (pollCount >= MAX_POLLS) {
+        resultType.value = 'fail'
+        resultTitle.value = '支付超时'
+        resultDesc.value = '支付处理时间过长，请前往“我的订单”查看支付状态。'
+      } else {
+        pollTimer = setTimeout(checkPayment, 3000)
+      }
+    }
   }
 }
 
 function stopPolling() {
   if (pollTimer) {
-    clearInterval(pollTimer)
+    clearTimeout(pollTimer)
     pollTimer = null
   }
 }
 
-onMounted(async () => {
-  await checkPayment()
+onMounted(() => {
+  void checkPayment()
   // 如果是待支付状态，启动轮询（每 3 秒查询一次）
-  if (resultType.value === 'pending') {
-    pollTimer = setInterval(checkPayment, 3000)
-  }
 })
 
 onBeforeUnmount(() => {
+  destroyed = true
   stopPolling()
 })
 </script>

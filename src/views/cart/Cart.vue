@@ -20,7 +20,7 @@
 
         <div v-for="item in cartStore.items" :key="item.productId" class="table-row">
           <div class="col-check">
-            <el-checkbox :model-value="item.checked" @change="(v) => cartStore.toggleCheck(item.productId, v)" />
+            <el-checkbox :model-value="item.checked" @change="async (v) => { try { await cartStore.toggleCheck(item.productId, v) } catch { ElMessage.error('更新失败') } }" />
           </div>
           <div class="col-img" @click="$router.push(`/product/${item.productId}`)">
             <div class="thumb">
@@ -38,20 +38,20 @@
           </div>
           <div class="col-qty">
             <el-input-number
-              v-model="item.quantity"
+              :model-value="item.quantity"
               :min="1"
               :max="99"
               size="small"
               controls-position="right"
               :disabled="updatingQty.has(item.productId)"
-              @change="(v) => debouncedUpdateQty(item.productId, v)"
+              @update:model-value="(v) => queueQuantityUpdate(item.productId, v)"
             />
           </div>
           <div class="col-total">
             <span class="item-total">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
           </div>
           <div class="col-del">
-            <el-button link type="danger" @click="cartStore.remove(item.productId)">
+            <el-button link type="danger" @click="async () => { try { await cartStore.remove(item.productId) } catch { ElMessage.error('删除失败') } }">
               <el-icon :size="16"><Delete /></el-icon>
             </el-button>
           </div>
@@ -62,7 +62,7 @@
       <div class="cart-footer card">
         <div class="footer-left">
           <el-checkbox v-model="checkAll" :indeterminate="indeterminate" @change="toggleAll">全选</el-checkbox>
-          <button class="clear-link" @click="cartStore.clear()">清空购物车</button>
+          <button class="clear-link" @click="ElMessageBox.confirm('确定清空购物车？', '提示', { type: 'warning' }).then(async () => { await cartStore.clear() }).catch(() => {})">清空购物车</button>
         </div>
         <div class="footer-right">
           <span class="total-label">
@@ -76,7 +76,7 @@
       </div>
 
       <!-- Checkout Dialog -->
-      <el-dialog v-model="dialogVisible" title="确认下单" width="560px" :close-on-click-modal="false" class="checkout-dialog">
+      <el-dialog v-model="dialogVisible" title="确认下单" width="min(560px, calc(100vw - 32px))" :close-on-click-modal="false" class="checkout-dialog">
         <div class="dialog-body">
           <div class="block">
             <h4>收货地址</h4>
@@ -131,7 +131,7 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { getAddressList } from '@/api/user'
 import { createOrder, getOrderToken } from '@/api/order'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -163,11 +163,15 @@ onMounted(async () => {
   const buyNowProductId = sessionStorage.getItem('buyNowProductId')
   if (buyNowProductId) {
     // 先取消所有勾选
-    await cartStore.checkAll(false)
-    // 只勾选"立即购买"的商品
-    const targetItem = cartStore.items.find(i => i.productId.toString() === buyNowProductId)
-    if (targetItem) {
-      await cartStore.toggleCheck(targetItem.productId, true)
+    try {
+      await cartStore.checkAll(false)
+      // 只勾选"立即购买"的商品
+      const targetItem = cartStore.items.find(i => i.productId.toString() === buyNowProductId)
+      if (targetItem) {
+        await cartStore.toggleCheck(targetItem.productId, true)
+      }
+    } catch {
+      ElMessage.error('更新失败')
     }
     sessionStorage.removeItem('buyNowProductId')
   }
@@ -175,34 +179,61 @@ onMounted(async () => {
 
 // 防抖更新数量（每个商品独立计时器，避免快速切换商品时定时器互相覆盖导致永久禁用）
 const qtyTimers = new Map()
-function debouncedUpdateQty(productId, quantity) {
+const pendingQuantities = new Map()
+
+function queueQuantityUpdate(productId, quantity) {
+  const item = cartStore.items.find(i => i.productId === productId)
+  if (!item || quantity === item.quantity) return
+
+  let pending = pendingQuantities.get(productId)
+  if (!pending) {
+    pending = { rollbackQuantity: item.quantity, quantity }
+    pendingQuantities.set(productId, pending)
+  } else {
+    pending.quantity = quantity
+  }
+
+  item.quantity = quantity
   updatingQty.value.add(productId)
 
   if (qtyTimers.has(productId)) {
     clearTimeout(qtyTimers.get(productId))
   }
 
-  qtyTimers.set(productId, setTimeout(async () => {
+  qtyTimers.set(productId, setTimeout(() => {
     qtyTimers.delete(productId)
-    try {
-      await cartStore.updateQty(productId, quantity)
-    } catch {
-      ElMessage.error('更新数量失败')
-    } finally {
-      updatingQty.value.delete(productId)
-    }
+    void submitQuantityUpdate(productId)
   }, 500))
 }
 
+async function submitQuantityUpdate(productId) {
+  const update = pendingQuantities.get(productId)
+  if (!update) return
+
+  try {
+    await cartStore.updateQty(productId, update.quantity, update.rollbackQuantity)
+  } catch {
+    ElMessage.error('更新数量失败')
+  } finally {
+    pendingQuantities.delete(productId)
+    updatingQty.value.delete(productId)
+  }
+}
+
 onBeforeUnmount(() => {
-  for (const timer of qtyTimers.values()) {
+  for (const [productId, timer] of qtyTimers.entries()) {
     clearTimeout(timer)
+    void submitQuantityUpdate(productId)
   }
   qtyTimers.clear()
 })
 
-function toggleAll(v) {
-  cartStore.checkAll(v)
+async function toggleAll(v) {
+  try {
+    await cartStore.checkAll(v)
+  } catch {
+    ElMessage.error("更新失败")
+  }
 }
 
 async function openCheckout() {
@@ -352,15 +383,11 @@ async function submitOrder() {
 /* Dialog */
 .checkout-dialog .el-dialog {
   background: #fff !important;
-  margin: 0 !important;
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
+  margin: 8vh auto 0 !important;
   max-height: 85vh !important;
   display: flex !important;
   flex-direction: column !important;
-  border-radius: 20px !important;
+  border-radius: var(--radius) !important;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18) !important;
 }
 

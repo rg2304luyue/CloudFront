@@ -1,5 +1,12 @@
 <template>
-  <div class="product-card" @click="$router.push(`/product/${product.id}`)">
+  <div
+    class="product-card"
+    role="link"
+    tabindex="0"
+    @click="$router.push(`/product/${product.id}`)"
+    @keydown.enter="$router.push(`/product/${product.id}`)"
+    @keydown.space.prevent="$router.push(`/product/${product.id}`)"
+  >
     <div class="card-image">
       <el-image v-if="product.mainImage" :src="product.mainImage" fit="cover" class="img-main" loading="lazy">
         <template #error>
@@ -49,7 +56,8 @@ defineProps({
 
 .card-image {
   position: relative;
-  height: 210px;
+  aspect-ratio: 1 / 0.86;
+  min-height: 0;
   background: #f3f4f6;
   overflow: hidden;
   display: flex;
@@ -90,6 +98,10 @@ defineProps({
 .product-card:hover .card-actions {
   opacity: 1;
 }
+.product-card:focus-visible {
+  outline: 3px solid rgba(79,110,245,.35);
+  outline-offset: 2px;
+}
 
 .card-body {
   padding: 14px 16px;
@@ -125,5 +137,9 @@ defineProps({
 .card-sales {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+@media (hover: none) {
+  .card-actions { opacity: 1; }
 }
 </style>

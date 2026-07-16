@@ -3,6 +3,7 @@
     <PageHeader title="我的订单" subtitle="查看和管理你的所有订单" />
 
     <LoadingState v-if="loading" />
+    <EmptyState v-else-if="loadFailed" description="订单加载失败，请检查网络后重试" show-action @action="fetchOrders" action-text="重新加载" />
     <EmptyState v-else-if="orders.length === 0" description="还没有任何订单，快去选购吧" show-action @action="$router.push('/product/list')" action-text="去逛逛" />
 
     <div v-else class="order-list">
@@ -63,6 +64,7 @@ import { usePayment } from '@/composables/usePayment'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { usePolling } from '@/composables/usePolling'
 
 import { orderStatusText as statusText } from '@/constants/orderStatus'
 
@@ -73,17 +75,34 @@ const loading = ref(true)
 const total = ref(0)
 const page = ref(1)
 const size = ref(10)
+const loadFailed = ref(false)
+let latestRequest = 0
+
+usePolling(() => fetchOrders({ background: true }), { interval: 15000 })
 
 onMounted(() => fetchOrders())
 
-async function fetchOrders() {
-  loading.value = true
+async function fetchOrders({ background = false } = {}) {
+  const requestId = ++latestRequest
+  if (!background) {
+    loading.value = true
+    loadFailed.value = false
+  }
+
   try {
     const r = await getOrderList({ page: page.value, size: size.value })
-    orders.value = r.data || []
-    total.value = r.total || 0
+    if (requestId === latestRequest) {
+      orders.value = r.data || []
+      total.value = r.total || 0
+    }
+  } catch {
+    if (requestId === latestRequest && orders.value.length === 0) {
+      loadFailed.value = true
+    }
   } finally {
-    loading.value = false
+    if (requestId === latestRequest && !background) {
+      loading.value = false
+    }
   }
 }
 

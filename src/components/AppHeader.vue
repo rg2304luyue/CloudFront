@@ -7,10 +7,11 @@
       </router-link>
     </div>
 
-    <div class="header-search" v-if="userStore.isLogin">
+    <div class="header-search">
       <el-icon :size="16" color="#9c9cb8"><Search /></el-icon>
       <input
         v-model="searchKeyword"
+        aria-label="搜索商品"
         placeholder="搜索商品..."
         class="search-input"
         @keyup.enter="doSearch"
@@ -226,5 +227,18 @@ function handleCommand(cmd) {
 .guest-area {
   display: flex;
   gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .app-header { padding: 0 16px; gap: 12px; }
+  .header-search { max-width: none; padding: 0 12px; }
+  .user-name, .role-tag, .user-area > .el-icon { display: none; }
+  .user-area { padding-right: 4px; }
+}
+
+@media (max-width: 480px) {
+  .logo-text { display: none; }
+  .header-search { height: 36px; }
+  .guest-area .btn { padding: 5px 9px; }
 }
 </style>

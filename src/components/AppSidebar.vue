@@ -194,4 +194,8 @@ const activeMenu = computed(() => {
   border-color: var(--primary);
   background: var(--primary-light);
 }
+
+@media (max-width: 768px) {
+  .app-sidebar { display: none; }
+}
 </style>
