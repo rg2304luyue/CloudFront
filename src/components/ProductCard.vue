@@ -39,16 +39,16 @@ defineProps({
 <style scoped>
 .product-card {
   background: var(--bg-card);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0,0,0,.06);
   transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition-fast);
 }
 .product-card:hover {
-  border-color: var(--primary);
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-4px);
+  border-color: rgba(0,113,227,.28);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-6px);
 }
 .product-card:hover .card-image img {
   transform: scale(1.05);
@@ -56,9 +56,9 @@ defineProps({
 
 .card-image {
   position: relative;
-  aspect-ratio: 1 / 0.86;
+  aspect-ratio: 1 / 1;
   min-height: 0;
-  background: #f3f4f6;
+  background: #f5f5f7;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -99,22 +99,22 @@ defineProps({
   opacity: 1;
 }
 .product-card:focus-visible {
-  outline: 3px solid rgba(79,110,245,.35);
+  outline: 3px solid rgba(0,113,227,.35);
   outline-offset: 2px;
 }
 
 .card-body {
-  padding: 14px 16px;
+  padding: 16px 18px 18px;
 }
 
 .card-name {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .card-footer {
@@ -124,14 +124,15 @@ defineProps({
 }
 
 .card-price {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
-  color: var(--danger);
+  color: var(--text);
   letter-spacing: -.5px;
 }
 .price-symbol {
   font-size: 13px;
   font-weight: 600;
+  color: var(--primary);
 }
 
 .card-sales {

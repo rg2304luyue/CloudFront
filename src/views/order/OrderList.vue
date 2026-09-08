@@ -36,8 +36,10 @@
         </div>
 
         <div class="order-foot">
-          <button v-if="order.status === 0" class="btn btn-danger" @click.stop="handlePay(order.orderNo)">立即支付</button>
-          <button v-if="order.status === 0" class="btn btn-ghost" @click.stop="handleCancel(order.id)">取消订单</button>
+          <button v-if="order.status === 0" class="btn btn-danger" :disabled="isPaying(order.orderNo)" @click.stop="handlePay(order.orderNo)">
+            {{ isPaying(order.orderNo) ? '正在准备…' : '立即支付' }}
+          </button>
+          <button v-if="order.status === 0" class="btn btn-ghost" :disabled="isPaying(order.orderNo)" @click.stop="handleCancel(order.id)">取消订单</button>
           <button v-if="order.status === 2" class="btn btn-primary" @click.stop="handleReceive(order.id)">确认收货</button>
         </div>
       </div>
@@ -69,7 +71,7 @@ import { usePolling } from '@/composables/usePolling'
 import { orderStatusText as statusText } from '@/constants/orderStatus'
 
 const router = useRouter()
-const { handlePay } = usePayment()
+const { handlePay, isPaying } = usePayment()
 const orders = ref([])
 const loading = ref(true)
 const total = ref(0)

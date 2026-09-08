@@ -89,15 +89,15 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f6fa 0%, #eff2ff 50%, #f5f6fa 100%);
+  background: radial-gradient(circle at 18% 20%, #e4f1ff 0, transparent 32%), #f5f5f7;
   padding: 24px;
 }
 
 .auth-panel {
   display: flex;
-  width: 840px;
+  width: 900px;
   min-height: 500px;
-  border-radius: var(--radius-xl);
+  border-radius: 32px;
   overflow: hidden;
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.03);
   background: var(--bg-card);
@@ -106,7 +106,7 @@ async function handleLogin() {
 /* Left Brand */
 .auth-left {
   width: 360px;
-  background: linear-gradient(155deg, #4f6ef5 0%, #3b54d4 50%, #1a1a2e 100%);
+  background: #1d1d1f;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -118,8 +118,8 @@ async function handleLogin() {
 
 .brand { text-align: center; }
 .brand-icon {
-  width: 60px; height: 60px;
-  border-radius: 16px;
+  width: 64px; height: 64px;
+  border-radius: 20px;
   background: rgba(255,255,255,.15);
   backdrop-filter: blur(4px);
   display: flex;
@@ -129,8 +129,8 @@ async function handleLogin() {
   border: 1px solid rgba(255,255,255,.1);
 }
 .brand h1 {
-  font-size: 26px;
-  font-weight: 800;
+  font-size: 30px;
+  font-weight: 700;
   letter-spacing: -.5px;
   margin-bottom: 6px;
 }
@@ -168,7 +168,7 @@ async function handleLogin() {
   margin-bottom: 30px;
 }
 .auth-header h2 {
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -.3px;
@@ -182,7 +182,7 @@ async function handleLogin() {
 .submit-btn {
   width: 100%;
   height: 46px;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: .5px;

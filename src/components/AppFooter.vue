@@ -42,7 +42,7 @@
 
 <style scoped>
 .app-footer {
-  background: var(--bg-card);
+  background: #fff;
   border-top: 1px solid var(--border);
   margin-top: auto;
 }
@@ -50,10 +50,10 @@
 .footer-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 32px 28px;
+  padding: 56px 40px 36px;
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr;
-  gap: 32px;
+  gap: 40px;
 }
 
 .footer-brand {
@@ -72,7 +72,7 @@
   justify-content: center;
 }
 .footer-brand span {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
 }
@@ -105,7 +105,7 @@
 
 .footer-bottom {
   border-top: 1px solid var(--border-light);
-  padding: 16px 32px;
+  padding: 20px 32px;
   text-align: center;
 }
 .footer-bottom p {

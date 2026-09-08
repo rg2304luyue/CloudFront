@@ -8,6 +8,10 @@ export function getOrderDetail(id) {
   return request.get(`/orders/${id}`)
 }
 
+export function getOrderByNo(orderNo) {
+  return request.get(`/orders/by-no/${encodeURIComponent(orderNo)}`)
+}
+
 export function getOrderList(params) {
   return request.get('/orders', { params })
 }
@@ -32,4 +36,14 @@ export function receiveOrder(id) {
 
 export function getOrderToken() {
   return request.get('/orders/token')
+}
+
+// ===== 管理员 Outbox =====
+
+export function getFailedOutboxMessages(limit = 50) {
+  return request.get('/orders/admin/outbox/failed', { params: { limit } })
+}
+
+export function retryFailedOutboxMessage(id) {
+  return request.post(`/orders/admin/outbox/${id}/retry`)
 }

@@ -104,13 +104,13 @@ function handleCommand(cmd) {
 <style scoped>
 .app-header {
   position: sticky; top: 0; z-index: 200;
-  height: 58px;
-  background: rgba(255,255,255,.9);
-  backdrop-filter: saturate(180%) blur(12px);
+  height: 64px;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 40px;
   gap: 20px;
 }
 
@@ -118,34 +118,34 @@ function handleCommand(cmd) {
 .header-left { display: flex; align-items: center; flex-shrink: 0; }
 .logo { display: flex; align-items: center; gap: 9px; }
 .logo-icon {
-  width: 32px; height: 32px;
-  border-radius: var(--radius-sm);
+  width: 34px; height: 34px;
+  border-radius: 11px;
   background: var(--primary-gradient);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.logo-text { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
+.logo-text { font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -.6px; }
 
 /* Search */
 .header-search {
   flex: 1;
-  max-width: 420px;
+  max-width: 500px;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg);
+  background: rgba(118,118,128,.10);
   border: 1px solid var(--border);
   border-radius: var(--radius-full);
   padding: 0 16px;
-  height: 38px;
+  height: 40px;
   transition: all var(--transition-fast);
 }
 .header-search:focus-within {
   border-color: var(--primary);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(79,110,245,.1);
+  box-shadow: 0 0 0 4px rgba(0,113,227,.10);
 }
 .search-input {
   flex: 1;
@@ -162,7 +162,7 @@ function handleCommand(cmd) {
 
 .cart-link {
   position: relative;
-  width: 38px; height: 38px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
@@ -230,7 +230,7 @@ function handleCommand(cmd) {
 }
 
 @media (max-width: 768px) {
-  .app-header { padding: 0 16px; gap: 12px; }
+  .app-header { padding: 0 20px; gap: 12px; }
   .header-search { max-width: none; padding: 0 12px; }
   .user-name, .role-tag, .user-area > .el-icon { display: none; }
   .user-area { padding-right: 4px; }

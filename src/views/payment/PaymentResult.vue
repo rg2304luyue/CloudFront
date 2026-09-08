@@ -14,7 +14,7 @@
           <el-icon :size="48"><CircleCheckFilled /></el-icon>
         </div>
         <h2>支付成功</h2>
-        <p>您的订单已支付成功，我们将尽快为您发货</p>
+        <p>支付已确认，订单状态已同步。您可以前往订单页面查看最新进度。</p>
         <div class="result-actions">
           <button class="btn btn-primary" @click="$router.push('/order/list')">我的订单</button>
           <button class="btn btn-ghost" @click="$router.push('/')">返回首页</button>
@@ -26,8 +26,8 @@
         <div class="result-icon pending">
           <el-icon :size="48"><Clock /></el-icon>
         </div>
-        <h2>支付处理中</h2>
-        <p>支付正在处理中，请稍后查看订单状态。如已扣款请勿重复支付。</p>
+        <h2>{{ paymentConfirmed ? '支付已确认，订单同步中' : '支付处理中' }}</h2>
+        <p>{{ paymentConfirmed ? '款项已确认，请勿重复支付。正在等待订单状态同步。' : '支付正在处理中，请稍后查看订单状态。如已扣款请勿重复支付。' }}</p>
         <div class="result-actions">
           <button class="btn btn-primary" @click="$router.push('/order/list')">查看订单</button>
           <button class="btn btn-ghost" @click="$router.push('/')">返回首页</button>
@@ -54,12 +54,15 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { getPaymentByOrderNo } from '@/api/payment'
+import { getOrderByNo } from '@/api/order'
+import { ORDER_STATUS } from '@/constants/orderStatus'
 
 const route = useRoute()
 const loading = ref(true)
 const resultType = ref('pending')
 const resultTitle = ref('')
 const resultDesc = ref('')
+const paymentConfirmed = ref(false)
 const MAX_POLLS = 20 // 最多轮询 20 次（60 秒），防止无限轮询
 let pollTimer = null
 let pollCount = 0
@@ -90,11 +93,25 @@ async function checkPayment() {
   polling = true
   pollCount++
   try {
-    const res = await getPaymentByOrderNo(orderNo)
-    const status = Number(res.data?.status)
+    const res = paymentConfirmed.value ? null : await getPaymentByOrderNo(orderNo)
+    if (destroyed) return
+    const status = paymentConfirmed.value ? 1 : Number(res.data?.status)
     if (status === 1) {
-      resultType.value = 'success'
-      stopPolling()
+      paymentConfirmed.value = true
+      const orderRes = await getOrderByNo(orderNo)
+      if (destroyed) return
+      const orderStatus = Number(orderRes.data?.status)
+      if ([ORDER_STATUS.PAID, ORDER_STATUS.SHIPPED, ORDER_STATUS.COMPLETED].includes(orderStatus)) {
+        resultType.value = 'success'
+        stopPolling()
+      } else if (orderStatus === ORDER_STATUS.CANCELLED) {
+        resultType.value = 'exception'
+        resultTitle.value = '款项已确认，但订单已取消'
+        resultDesc.value = '请勿重复支付，请联系管理员核实款项。当前尚未确认退款完成。'
+        stopPolling()
+      } else {
+        resultType.value = 'pending'
+      }
     } else if (status === 2) {
       resultType.value = 'fail'
       resultTitle.value = '交易已关闭'
@@ -115,9 +132,9 @@ async function checkPayment() {
     polling = false
     if (resultType.value === 'pending' && !destroyed) {
       if (pollCount >= MAX_POLLS) {
-        resultType.value = 'fail'
-        resultTitle.value = '支付超时'
-        resultDesc.value = '支付处理时间过长，请前往“我的订单”查看支付状态。'
+        resultType.value = 'unconfirmed'
+        resultTitle.value = paymentConfirmed.value ? '支付已确认，订单同步尚未完成' : '暂未确认支付结果'
+        resultDesc.value = '请勿重复支付，请前往“我的订单”查看最新状态；若已扣款且状态长期未更新，请联系管理员。'
       } else {
         pollTimer = setTimeout(checkPayment, 3000)
       }

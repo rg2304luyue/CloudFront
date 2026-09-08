@@ -70,6 +70,31 @@
 - Independent frontend and backend documentation reviews completed; stale authentication, cart, polling, payment recovery, internal-token, Outbox, and schema-operation notes were corrected or clarified.
 - No real `.env` file or database was read or modified.
 
+## Frontend visual refresh (planned)
+
+### Objective
+
+- Modernize the customer-facing Vue storefront while preserving existing Java backend APIs, routes, and user flows.
+
+### Acceptance criteria
+
+- [ ] Establish a cohesive visual system (color, typography, spacing, elevation, states) in reusable styles/components.
+- [ ] Refresh the highest-impact customer pages: header/navigation, home, product listing/detail, cart, and authentication.
+- [ ] Keep desktop and mobile layouts usable and preserve all existing interactions.
+- [ ] Build the frontend successfully and visually inspect the key routes.
+
+### Plan
+
+- [x] Inventory the frontend structure and current component/page surface.
+- [x] Confirm visual direction, target users, branding constraints, and priority routes with the project owner: Apple-inspired minimalism; all pages; production use; frontend-only.
+- [x] Implement the approved visual system and customer-facing page refresh.
+- [x] Verify with Vite build and browser review; record outcomes below.
+
+### Review
+
+- Updated the shared design tokens and Element Plus control layer to a restrained Apple-inspired palette; refreshed global layouts, navigation, footer, authentication, home and product cards while preserving all scripts and API calls.
+- Verification: `npm run build` passed (only existing `@vueuse/core` Rollup PURE-comment warnings). Independent subagent review found and the implementation fixed the active-sidebar icon contrast issue; no API, store, router, or backend changes were found.
+
 - Implemented backend fixes in sibling `CloudBack`.
 - Verification: `mvnw.cmd -q -DskipTests compile` passed for the full multi-module backend.
 - Follow-up review: subagent review requested after implementation.

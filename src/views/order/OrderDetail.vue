@@ -50,7 +50,9 @@
       </div>
 
       <div class="action-row" v-if="order.status === 0">
-        <button class="btn btn-danger btn-lg" @click="handlePay(order.orderNo)">立即支付</button>
+        <button class="btn btn-danger btn-lg" :disabled="isPaying(order.orderNo)" @click="handlePay(order.orderNo)">
+          {{ isPaying(order.orderNo) ? '正在准备…' : '立即支付' }}
+        </button>
       </div>
 
       <div class="action-row" v-if="order.status === 2">
@@ -75,7 +77,7 @@ import PageHeader from '@/components/PageHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { handlePay } = usePayment()
+const { handlePay, isPaying } = usePayment()
 const order = ref(null)
 const loading = ref(true)
 

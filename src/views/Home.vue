@@ -78,7 +78,7 @@ onMounted(() => fetchProducts())
 /* Hero */
 .hero {
   position: relative;
-  padding: 80px 24px 88px;
+  padding: 116px 24px 112px;
   text-align: center;
   overflow: hidden;
 }
@@ -86,43 +86,43 @@ onMounted(() => fetchProducts())
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,110,245,.08), transparent),
-    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(108,92,231,.05), transparent),
-    var(--bg);
+    radial-gradient(ellipse 70% 78% at 50% 0%, rgba(0,113,227,.13), transparent 68%),
+    radial-gradient(ellipse 36% 42% at 8% 85%, rgba(120,194,255,.14), transparent 76%),
+    #fbfbfd;
 }
 .hero-content {
   position: relative;
-  max-width: 640px;
+  max-width: 780px;
   margin: 0 auto;
 }
 .hero-tag {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: var(--primary-light);
+  background: rgba(0,113,227,.09);
   color: var(--primary);
   font-size: 12px;
   font-weight: 600;
   margin-bottom: 20px;
-  letter-spacing: 1px;
+  letter-spacing: .08em;
 }
 .hero h1 {
-  font-size: 38px;
-  font-weight: 800;
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 700;
   color: var(--text);
-  letter-spacing: -1px;
-  margin-bottom: 10px;
-  line-height: 1.3;
+  letter-spacing: -.065em;
+  margin-bottom: 18px;
+  line-height: 1.08;
 }
 .hero p {
-  font-size: 15px;
+  font-size: 18px;
   color: var(--text-secondary);
-  margin-bottom: 30px;
+  margin-bottom: 36px;
   line-height: 1.6;
 }
 .hero-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -135,13 +135,13 @@ onMounted(() => fetchProducts())
   margin-bottom: 24px;
 }
 .section-head h2 {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -.3px;
+  letter-spacing: -.04em;
 }
 .section-sub {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   margin-top: 4px;
 }
@@ -173,15 +173,15 @@ onMounted(() => fetchProducts())
 .product-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
+  gap: 24px;
 }
 
 @media (max-width: 1024px) {
   .product-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 768px) {
-  .hero { padding: 52px 20px 60px; }
-  .hero h1 { font-size: 28px; }
+  .hero { padding: 76px 20px 72px; }
+  .hero h1 { font-size: 40px; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 </style>

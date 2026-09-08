@@ -51,6 +51,11 @@ const routes = [
         path: 'admin/review', name: 'ProductReview',
         component: () => import('@/views/admin/ProductReview.vue'),
         meta: { title: '商品审核', requireAuth: true, roles: ['ADMIN'] }
+      },
+      {
+        path: 'admin/outbox', name: 'AdminOutbox',
+        component: () => import('@/views/admin/OutboxManage.vue'),
+        meta: { title: '失败消息', requireAuth: true, roles: ['ADMIN'] }
       }
     ]
   },

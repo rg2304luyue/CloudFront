@@ -63,6 +63,10 @@
           <el-icon><Setting /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
+        <el-menu-item index="/admin/outbox">
+          <el-icon><WarningFilled /></el-icon>
+          <span>失败消息</span>
+        </el-menu-item>
       </template>
     </el-menu>
 
@@ -96,6 +100,7 @@ const activeMenu = computed(() => {
   if (p.startsWith('/seller/categories')) return '/seller/categories'
   if (p.startsWith('/admin/review')) return '/admin/review'
   if (p.startsWith('/admin/users')) return '/admin/users'
+  if (p.startsWith('/admin/outbox')) return '/admin/outbox'
   if (p.startsWith('/seller/orders')) return '/seller/orders'
   return '/home'
 })
@@ -103,9 +108,9 @@ const activeMenu = computed(() => {
 
 <style scoped>
 .app-sidebar {
-  width: 230px;
-  min-height: calc(100vh - 56px - 48px);
-  background: var(--bg-card);
+  width: 248px;
+  min-height: calc(100vh - 64px - 48px);
+  background: rgba(255,255,255,.82);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -113,13 +118,13 @@ const activeMenu = computed(() => {
   flex-shrink: 0;
   overflow: hidden;
 }
-.app-sidebar.collapsed { width: 66px; }
+.app-sidebar.collapsed { width: 72px; }
 
 /* Menu */
 .sidebar-menu {
   flex: 1;
   border-right: none !important;
-  padding: 10px 8px;
+  padding: 18px 12px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -130,14 +135,14 @@ const activeMenu = computed(() => {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: .8px;
-  padding: 14px 14px 6px;
+  padding: 18px 14px 7px;
   white-space: nowrap;
 }
 
 .sidebar-menu .el-menu-item {
-  height: 42px;
-  margin: 1px 0;
-  border-radius: var(--radius-sm);
+  height: 44px;
+  margin: 3px 0;
+  border-radius: 11px;
   font-size: 13px;
   color: var(--text-secondary);
   transition: all var(--transition-fast);
@@ -147,12 +152,12 @@ const activeMenu = computed(() => {
   color: var(--text);
 }
 .sidebar-menu .el-menu-item.is-active {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: var(--primary);
+  color: #fff;
   font-weight: 600;
 }
 .sidebar-menu .el-menu-item.is-active .el-icon {
-  color: var(--primary);
+  color: #fff;
 }
 
 .cart-badge {

@@ -1,13 +1,13 @@
 /* ===== Design Tokens ===== */
 :root {
   /* Brand */
-  --primary: #4f6ef5;
-  --primary-light: #eff2ff;
-  --primary-dark: #3b54d4;
-  --primary-gradient: linear-gradient(135deg, #4f6ef5 0%, #6c5ce7 100%);
+  --primary: #0071e3;
+  --primary-light: #e8f3ff;
+  --primary-dark: #005bb5;
+  --primary-gradient: linear-gradient(135deg, #0071e3 0%, #0077ed 100%);
 
   /* Semantic */
-  --danger: #e8595b;
+  --danger: #e13a3e;
   --danger-light: #fef2f2;
   --danger-dark: #d94a4c;
   --success: #22c55e;
@@ -16,37 +16,37 @@
   --warning-light: #fffbeb;
 
   /* Text */
-  --text: #1a1a2e;
-  --text-secondary: #5a5a7a;
-  --text-muted: #9c9cb8;
+  --text: #1d1d1f;
+  --text-secondary: #515154;
+  --text-muted: #86868b;
 
   /* Background */
-  --bg: #f5f6fa;
+  --bg: #f5f5f7;
   --bg-card: #ffffff;
-  --bg-hover: #f8f9fc;
+  --bg-hover: #f0f5fb;
 
   /* Border */
-  --border: #e8e8f0;
-  --border-light: #f0f0f5;
+  --border: #d2d2d7;
+  --border-light: #e8e8ed;
 
   /* Shadow */
-  --shadow-xs: 0 1px 2px rgba(0,0,0,.03);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
-  --shadow: 0 2px 8px rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.04);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.06), 0 2px 4px rgba(0,0,0,.04);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.06);
+  --shadow: 0 8px 24px rgba(0,0,0,.08);
+  --shadow-md: 0 16px 40px rgba(0,0,0,.10);
+  --shadow-lg: 0 24px 60px rgba(0,0,0,.14);
 
   /* Radius */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
   /* Transitions */
-  --transition-fast: .15s ease;
-  --transition: .2s ease;
-  --transition-slow: .3s cubic-bezier(.4,0,.2,1);
+  --transition-fast: .18s ease;
+  --transition: .28s cubic-bezier(.2,.8,.2,1);
+  --transition-slow: .45s cubic-bezier(.2,.8,.2,1);
 }
 
 /* ===== Reset ===== */
@@ -65,7 +65,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  font-family: "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
@@ -100,13 +100,13 @@ input, textarea, select {
 
 /* ===== Layout Utilities ===== */
 .page-container {
-  padding: 28px 32px;
-  max-width: 1260px;
+  padding: 48px 40px 64px;
+  max-width: 1360px;
   margin: 0 auto;
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 24px;
@@ -129,11 +129,13 @@ input, textarea, select {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 .card:hover {
-  border-color: var(--primary);
-  box-shadow: var(--shadow-md);
+  border-color: rgba(0,113,227,.32);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
 }
 
 /* ===== Button Utilities ===== */
@@ -142,11 +144,11 @@ input, textarea, select {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 22px;
+  padding: 10px 20px;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
@@ -158,12 +160,13 @@ input, textarea, select {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary-gradient);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-dark);
-  box-shadow: 0 2px 8px rgba(79,110,245,.35);
+  box-shadow: 0 7px 18px rgba(0,113,227,.28);
+  transform: scale(1.015);
 }
 
 .btn-danger {
@@ -176,7 +179,7 @@ input, textarea, select {
 }
 
 .btn-ghost {
-  background: #fff;
+  background: rgba(255,255,255,.78);
   color: var(--text-secondary);
   border: 1px solid var(--border);
 }
@@ -231,7 +234,7 @@ input, textarea, select {
 }
 @media (max-width: 768px) {
   .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .page-container { padding: 20px 16px; }
+  .page-container { padding: 32px 20px 48px; }
 }
 @media (max-width: 480px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
@@ -251,3 +254,33 @@ input, textarea, select {
 .status-2 { background: #eff6ff; color: #2563eb; }
 .status-3 { background: #f5f5f5; color: #737373; }
 .status-4 { background: #fef2f2; color: #dc2626; }
+
+/* Element Plus: a quiet, native-feeling control layer used across every role. */
+:root {
+  --el-color-primary: var(--primary);
+  --el-border-color: var(--border);
+  --el-border-color-light: var(--border-light);
+  --el-text-color-primary: var(--text);
+  --el-text-color-regular: var(--text-secondary);
+  --el-fill-color-light: #f5f5f7;
+  --el-border-radius-base: var(--radius-sm);
+  --el-font-family: "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+}
+.el-input__wrapper, .el-textarea__inner, .el-select__wrapper {
+  box-shadow: 0 0 0 1px var(--border) inset !important;
+  border-radius: var(--radius-sm) !important;
+  background: rgba(255,255,255,.88) !important;
+}
+.el-input__wrapper.is-focus, .el-select__wrapper.is-focused, .el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--primary) inset, 0 0 0 4px rgba(0,113,227,.10) !important;
+}
+.el-button { border-radius: var(--radius-sm); font-weight: 600; transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast); }
+.el-button--primary { box-shadow: 0 4px 12px rgba(0,113,227,.18); }
+.el-button--primary:hover { transform: translateY(-1px); box-shadow: 0 7px 18px rgba(0,113,227,.25); }
+.el-table, .el-card, .el-dialog { border-radius: var(--radius) !important; overflow: hidden; }
+.el-table { --el-table-header-bg-color: #fafafa; --el-table-row-hover-bg-color: #f7fbff; }
+.el-pagination { --el-pagination-button-bg-color: transparent; --el-pagination-hover-color: var(--primary); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
