@@ -39,7 +39,9 @@ request.interceptors.response.use(
       if (res.code === 401) {
         handleUnauthorized()
       }
-      return Promise.reject(new Error(res.message))
+      const error = new Error(res.message)
+      error.code = res.code
+      return Promise.reject(error)
     }
     return res
   },

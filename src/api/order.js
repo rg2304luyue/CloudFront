@@ -38,6 +38,10 @@ export function getOrderToken() {
   return request.get('/orders/token')
 }
 
+export function getOrderRequest(orderToken) {
+  return request.get(`/orders/requests/${encodeURIComponent(orderToken)}`)
+}
+
 // ===== 管理员 Outbox =====
 
 export function getFailedOutboxMessages(limit = 50) {

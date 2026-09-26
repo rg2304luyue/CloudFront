@@ -1,6 +1,9 @@
 <template>
   <div class="page-container">
     <PageHeader title="购物车" subtitle="管理你的购物清单" />
+    <el-alert v-if="checkout.message.value" :title="checkout.message.value" type="info" :closable="false" show-icon />
+    <el-button v-if="checkout.locked.value" :loading="checkout.busy.value" @click="checkout.refresh()">继续查询下单结果</el-button>
+    <el-button v-if="checkout.locked.value && checkout.status.value === 'READY'" :disabled="checkout.busy.value" @click="dialogVisible = true">查看并重试原请求</el-button>
 
     <LoadingState v-if="loading" />
     <EmptyState v-else-if="cartStore.items.length === 0" description="购物车还是空的，快去逛逛吧" show-action @action="$router.push('/product/list')" action-text="去逛逛" />
@@ -9,7 +12,7 @@
       <!-- Cart Table -->
       <div class="cart-table card">
         <div class="table-head">
-          <span class="col-check"><el-checkbox v-model="checkAll" :indeterminate="indeterminate" @change="toggleAll" /></span>
+          <span class="col-check"><el-checkbox v-model="checkAll" :disabled="checkout.locked.value" :indeterminate="indeterminate" @change="toggleAll" /></span>
           <span class="col-img"></span>
           <span class="col-name">商品</span>
           <span class="col-price">单价</span>
@@ -20,7 +23,7 @@
 
         <div v-for="item in cartStore.items" :key="item.productId" class="table-row">
           <div class="col-check">
-            <el-checkbox :model-value="item.checked" @change="async (v) => { try { await cartStore.toggleCheck(item.productId, v) } catch { ElMessage.error('更新失败') } }" />
+            <el-checkbox :model-value="item.checked" :disabled="checkout.locked.value" @change="async (v) => { try { await cartStore.toggleCheck(item.productId, v) } catch { ElMessage.error('更新失败') } }" />
           </div>
           <div class="col-img" @click="$router.push(`/product/${item.productId}`)">
             <div class="thumb">
@@ -43,7 +46,7 @@
               :max="99"
               size="small"
               controls-position="right"
-              :disabled="updatingQty.has(item.productId)"
+              :disabled="updatingQty.has(item.productId) || checkout.locked.value"
               @update:model-value="(v) => queueQuantityUpdate(item.productId, v)"
             />
           </div>
@@ -51,7 +54,7 @@
             <span class="item-total">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
           </div>
           <div class="col-del">
-            <el-button link type="danger" @click="async () => { try { await cartStore.remove(item.productId) } catch { ElMessage.error('删除失败') } }">
+            <el-button link type="danger" :disabled="checkout.locked.value" @click="async () => { try { await cartStore.remove(item.productId) } catch { ElMessage.error('删除失败') } }">
               <el-icon :size="16"><Delete /></el-icon>
             </el-button>
           </div>
@@ -61,26 +64,26 @@
       <!-- Sticky Footer -->
       <div class="cart-footer card">
         <div class="footer-left">
-          <el-checkbox v-model="checkAll" :indeterminate="indeterminate" @change="toggleAll">全选</el-checkbox>
-          <button class="clear-link" @click="ElMessageBox.confirm('确定清空购物车？', '提示', { type: 'warning' }).then(async () => { await cartStore.clear() }).catch(() => {})">清空购物车</button>
+          <el-checkbox v-model="checkAll" :disabled="checkout.locked.value" :indeterminate="indeterminate" @change="toggleAll">全选</el-checkbox>
+          <button class="clear-link" :disabled="checkout.locked.value" @click="ElMessageBox.confirm('确定清空购物车？', '提示', { type: 'warning' }).then(async () => { await cartStore.clear() }).catch(() => {})">清空购物车</button>
         </div>
         <div class="footer-right">
           <span class="total-label">
             已选 <strong>{{ cartStore.checkedCount }}</strong> 件，合计
           </span>
           <span class="total-price">¥{{ cartStore.totalPrice.toFixed(2) }}</span>
-          <button class="btn btn-danger btn-lg" :disabled="cartStore.checkedCount === 0" @click="openCheckout">
+          <button class="btn btn-danger btn-lg" :disabled="!checkoutReady || cartStore.checkedCount === 0 || updatingQty.size > 0" @click="openCheckout">
             去结算
           </button>
         </div>
       </div>
-
+    </template>
       <!-- Checkout Dialog -->
       <el-dialog v-model="dialogVisible" title="确认下单" width="min(560px, calc(100vw - 32px))" :close-on-click-modal="false" class="checkout-dialog">
         <div class="dialog-body">
           <div class="block">
             <h4>收货地址</h4>
-            <el-select v-model="selectedAddressId" placeholder="请选择收货地址" style="width:100%" :disabled="addresses.length === 0">
+            <el-select v-model="selectedAddressId" placeholder="请选择收货地址" style="width:100%" :disabled="addresses.length === 0 || checkout.locked.value">
               <el-option
                 v-for="a in addresses"
                 :key="a.id"
@@ -97,7 +100,7 @@
           <div class="block">
             <h4>商品清单</h4>
             <div class="order-items-list">
-              <div v-for="item in checkedItems" :key="item.productId" class="order-item">
+              <div v-for="item in checkoutItems" :key="item.productId" class="order-item">
                 <span class="order-item-name">{{ item.name }} ×{{ item.quantity }}</span>
                 <span class="order-item-price">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
               </div>
@@ -106,22 +109,21 @@
 
           <div class="block">
             <h4>订单备注</h4>
-            <el-input v-model="remark" placeholder="选填（如有特殊要求请备注）" type="textarea" :rows="2" resize="none" />
+            <el-input v-model="remark" placeholder="选填（如有特殊要求请备注）" type="textarea" :rows="2" resize="none" :disabled="checkout.locked.value" />
           </div>
 
           <div class="dialog-total">
             <span>合计</span>
-            <strong>¥{{ cartStore.totalPrice.toFixed(2) }}</strong>
+            <strong>¥{{ checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2) }}</strong>
           </div>
         </div>
         <template #footer>
           <el-button @click="dialogVisible = false" size="large">取消</el-button>
-          <el-button type="primary" @click="submitOrder" :loading="submitting" :disabled="!selectedAddressId" size="large">
-            提交订单
+          <el-button type="primary" @click="submitOrder" :loading="submitting || checkout.busy.value" :disabled="!checkoutReady || (!checkout.locked.value && !selectedAddressId)" size="large">
+            {{ checkout.locked.value ? (checkout.status.value === 'READY' ? '重试原请求' : '查询下单结果') : '提交订单' }}
           </el-button>
         </template>
       </el-dialog>
-    </template>
   </div>
 </template>
 
@@ -129,8 +131,9 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+import { useUserStore } from '@/stores/user'
+import { useCheckoutRequest } from '@/composables/useCheckoutRequest'
 import { getAddressList } from '@/api/user'
-import { createOrder, getOrderToken } from '@/api/order'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -145,7 +148,12 @@ const submitting = ref(false)
 const addresses = ref([])
 const selectedAddressId = ref(null)
 const remark = ref('')
-const orderToken = ref('')
+const checkoutReady = ref(false)
+const checkout = useCheckoutRequest(useUserStore(), async orderId => {
+  ElMessage.success('下单成功')
+  dialogVisible.value = false
+  await router.push(`/order/${orderId}`)
+})
 const updatingQty = ref(new Set())
 
 const checkAll = computed({
@@ -154,14 +162,27 @@ const checkAll = computed({
 })
 const indeterminate = computed(() => cartStore.items.some(i => i.checked) && !checkAll.value)
 const checkedItems = computed(() => cartStore.items.filter(i => i.checked))
+const checkoutItems = computed(() => checkout.pending.value?.items || checkedItems.value)
 
 onMounted(async () => {
-  await cartStore.fetchCart()
-  loading.value = false
+  try {
+    await checkout.initialize()
+    checkoutReady.value = true
+    if (checkout.locked.value) {
+      selectedAddressId.value = checkout.pending.value.addressId
+      remark.value = checkout.pending.value.remark
+      dialogVisible.value = true
+    }
+    await cartStore.fetchCart()
+  } catch (error) {
+    ElMessage.error(error.message || '加载失败，请刷新重试')
+  } finally {
+    loading.value = false
+  }
 
   // 处理"立即购买"逻辑：只勾选指定商品
   const buyNowProductId = sessionStorage.getItem('buyNowProductId')
-  if (buyNowProductId) {
+  if (buyNowProductId && !checkout.locked.value) {
     // 先取消所有勾选
     try {
       await cartStore.checkAll(false)
@@ -229,6 +250,7 @@ onBeforeUnmount(() => {
 })
 
 async function toggleAll(v) {
+  if (checkout.locked.value) return
   try {
     await cartStore.checkAll(v)
   } catch {
@@ -237,6 +259,12 @@ async function toggleAll(v) {
 }
 
 async function openCheckout() {
+  if (!checkoutReady.value || submitting.value || checkout.busy.value) return
+  if (checkout.locked.value) {
+    dialogVisible.value = true
+    await checkout.refresh()
+    return
+  }
   try {
     const res = await getAddressList()
     addresses.value = res.data || []
@@ -246,8 +274,7 @@ async function openCheckout() {
     addresses.value = []
   }
   try {
-    const tokenRes = await getOrderToken()
-    orderToken.value = tokenRes.data
+    await checkout.prepare()
   } catch {
     ElMessage.error('获取下单令牌失败')
     return
@@ -256,19 +283,12 @@ async function openCheckout() {
 }
 
 async function submitOrder() {
+  if (submitting.value || !checkoutReady.value) return
   submitting.value = true
   try {
-    const res = await createOrder(selectedAddressId.value, remark.value, orderToken.value)
-    ElMessage.success('下单成功')
-    dialogVisible.value = false
-    const orderId = res.data?.id
-    router.push(orderId ? `/order/${orderId}` : '/order/list')
-  } catch {
-    // 下单失败，token 已被消费，重新获取为下次准备
-    try {
-      const tokenRes = await getOrderToken()
-      orderToken.value = tokenRes.data
-    } catch {}
+    await checkout.submit(selectedAddressId.value, remark.value, checkoutItems.value)
+  } catch (error) {
+    ElMessage.error(error.message || '暂时无法提交，请稍后重试')
   } finally {
     submitting.value = false
   }
