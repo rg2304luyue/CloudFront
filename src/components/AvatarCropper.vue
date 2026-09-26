@@ -161,17 +161,19 @@ watch(() => props.file, f => {
 <style scoped>
 .cropper-overlay {
   position: fixed; inset: 0; z-index: 3000;
-  background: rgba(0,0,0,.5);
+  background: rgba(0,0,0,.36);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
 }
 .cropper-box {
   background: var(--bg-card); border-radius: var(--radius-lg);
-  padding: 24px; width: 420px; max-width: 95vw;
+  padding: 28px; width: 420px; max-width: 95vw;
+  box-shadow: var(--shadow-lg);
 }
-.cropper-title { margin: 0 0 16px; font-size: 16px; }
+.cropper-title { margin: 0 0 18px; font-size: 19px; font-weight: 600; letter-spacing: -.02em; }
 .cropper-viewport {
   position: relative; width: 100%; height: 320px;
-  overflow: hidden; background: #000; border-radius: 8px;
+  overflow: hidden; background: #111; border-radius: 16px;
   cursor: grab; user-select: none;
 }
 .cropper-viewport:active { cursor: grabbing; }
@@ -189,7 +191,7 @@ watch(() => props.file, f => {
 }
 .crop-circle {
   width: 200px; height: 200px;
-  border: 2px dashed rgba(255,255,255,.7);
+  border: 2px solid rgba(255,255,255,.85);
   border-radius: 50%;
 }
 .cropper-controls {

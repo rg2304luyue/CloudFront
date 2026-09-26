@@ -104,68 +104,75 @@ function handleReceive(id) {
 
 <style scoped>
 .detail-card {
-  padding: 32px;
+  padding: 36px 40px;
+  border-radius: var(--radius-lg);
 }
 
 .detail-head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
+  gap: 16px;
   margin-bottom: 28px;
-  padding-bottom: 20px;
+  padding-bottom: 24px;
   border-bottom: 1px solid var(--border-light);
 }
 .head-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .5px;
   margin-bottom: 8px;
 }
 
 .badge {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 5px 14px;
+  padding: 6px 16px;
   border-radius: var(--radius-full);
 }
 
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px 36px;
+  gap: 24px 48px;
 }
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 .field.full {
   grid-column: 1 / -1;
 }
 .label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .5px;
 }
 .value {
-  font-size: 14px;
-  color: var(--text-secondary);
+  font-size: 15px;
+  color: var(--text);
+  word-break: break-all;
 }
 .amount {
-  color: var(--danger);
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -.02em;
 }
 
 .action-row {
   display: flex;
+  justify-content: flex-end;
   gap: 12px;
-  margin-top: 28px;
-  padding-top: 20px;
+  margin-top: 32px;
+  padding-top: 24px;
   border-top: 1px solid var(--border-light);
+}
+.action-row .btn-danger { background: var(--primary); }
+.action-row .btn-danger:hover:not(:disabled) { background: var(--primary-hover); }
+
+@media (max-width: 600px) {
+  .detail-card { padding: 24px; }
+  .detail-grid { grid-template-columns: 1fr; }
 }
 </style>

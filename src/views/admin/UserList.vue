@@ -3,7 +3,7 @@
     <!-- Seller Applications -->
     <div class="section">
       <PageHeader title="卖家申请" subtitle="审核用户提交的卖家申请" />
-      <div class="card" style="overflow:hidden;max-width:720px" v-if="applications.length > 0">
+      <div class="card table-card" style="max-width:720px" v-if="applications.length > 0">
         <el-table :data="applications" style="width:100%" stripe>
           <el-table-column prop="id" label="申请ID" width="180" />
           <el-table-column prop="userId" label="用户ID" width="180" />
@@ -26,7 +26,7 @@
     <!-- User Management -->
     <div class="section">
       <PageHeader title="用户管理" subtitle="管理平台所有用户" />
-      <div class="card" style="overflow:hidden;max-width:960px">
+      <div class="card table-card" style="max-width:960px">
         <el-table :data="users" style="width:100%" v-loading="loading" stripe>
           <el-table-column prop="id" label="ID" width="180" />
           <el-table-column prop="username" label="用户名" width="120" />

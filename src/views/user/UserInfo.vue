@@ -9,10 +9,10 @@
         <div class="avatar-wrapper" @click="!uploading && fileInput.click()" title="点击更换头像">
           <el-image v-if="userStore.userInfo.avatar" :src="userStore.userInfo.avatar" fit="cover" class="avatar-img">
             <template #error>
-              <el-icon :size="40" color="#d1d5db"><UserFilled /></el-icon>
+              <el-icon :size="40" color="#ffffff"><UserFilled /></el-icon>
             </template>
           </el-image>
-          <el-icon v-else :size="40" color="#d1d5db"><UserFilled /></el-icon>
+          <el-icon v-else :size="40" color="#ffffff"><UserFilled /></el-icon>
           <div class="avatar-overlay">
             <el-icon :size="20"><CameraFilled /></el-icon>
             <span>更换头像</span>
@@ -156,33 +156,33 @@ async function handleCropped(blob) {
 
 <style scoped>
 .profile {
-  max-width: 560px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
 /* Avatar */
 .profile-avatar {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .avatar-wrapper {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
   overflow: hidden;
   cursor: pointer;
-  border: 3px solid var(--primary-light);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #f5f6fa;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background: linear-gradient(180deg, #c7c7cc, #a1a1a6);
+  box-shadow: 0 0 0 4px #fff, var(--shadow);
+  transition: box-shadow var(--transition), transform var(--transition);
 }
 .avatar-wrapper:hover {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 6px rgba(79,110,245,.1);
+  box-shadow: 0 0 0 4px #fff, 0 0 0 6px rgba(0,113,227,.35), var(--shadow-md);
+  transform: scale(1.02);
 }
 .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
 
@@ -198,77 +198,87 @@ async function handleCropped(blob) {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(0,0,0,.5);
+  background: rgba(0,0,0,.42);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   opacity: 0;
   transition: opacity var(--transition-fast);
   color: #fff;
   font-size: 11px;
+  font-weight: 500;
 }
 
 .file-input { display: none; }
 
 .profile-name {
-  font-size: 18px;
-  font-weight: 600;
-  margin-top: 14px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-top: 18px;
 }
 .profile-role {
   display: inline-block;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
-/* Fields */
+/* Fields: grouped list, iOS Settings style */
 .profile-fields {
-  padding: 28px;
+  padding: 8px 28px 24px;
+  border-radius: var(--radius-lg);
 }
 
 .field {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0;
+  min-height: 56px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border-light);
-}
-.field:last-of-type {
-  border-bottom: none;
 }
 
 .field-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 15px;
+  color: var(--text);
   flex-shrink: 0;
   width: 80px;
 }
 .field-value {
-  font-size: 14px;
-  color: var(--text);
+  font-size: 15px;
+  color: var(--text-secondary);
   text-align: right;
   flex: 1;
 }
 .field-input {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  background: var(--bg);
+  font-size: 15px;
+  color: var(--text);
   outline: none;
   text-align: right;
-  width: 200px;
-  transition: border-color var(--transition-fast);
+  width: 240px;
+  transition: box-shadow var(--transition-fast), background var(--transition-fast);
 }
 .field-input:focus {
-  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--primary) inset, var(--primary-ring);
 }
 
 .field-actions {
   display: flex;
-  gap: 8px;
-  padding-top: 20px;
+  gap: 10px;
+  padding-top: 24px;
   justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .profile-fields { padding: 4px 18px 20px; }
+  .field-input { width: 100%; max-width: 200px; }
 }
 </style>

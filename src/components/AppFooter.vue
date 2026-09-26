@@ -42,17 +42,17 @@
 
 <style scoped>
 .app-footer {
-  background: #fff;
-  border-top: 1px solid var(--border);
+  background: var(--bg);
+  border-top: 1px solid var(--border-light);
   margin-top: auto;
 }
 
 .footer-inner {
-  max-width: 1200px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 56px 40px 36px;
+  padding: 44px 40px 28px;
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
   gap: 40px;
 }
 
@@ -63,50 +63,54 @@
   margin-bottom: 12px;
 }
 .footer-logo {
-  width: 32px; height: 32px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-gradient);
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  background: var(--text);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .footer-brand span {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text);
+  letter-spacing: -.02em;
 }
 
 .footer-desc {
-  font-size: 13px;
-  color: var(--text-muted);
+  font-size: 12px;
+  color: var(--text-secondary);
   line-height: 1.7;
+  max-width: 300px;
 }
 
 .footer-col h4 {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .footer-col a,
-.footer-col span {
+.footer-col > span {
   display: block;
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 9px;
   transition: color var(--transition-fast);
   line-height: 1.4;
 }
 .footer-col a:hover {
-  color: var(--primary);
+  color: var(--text);
+  text-decoration: underline;
 }
 
 .footer-bottom {
+  max-width: 1080px;
+  margin: 0 auto;
   border-top: 1px solid var(--border-light);
-  padding: 20px 32px;
-  text-align: center;
+  padding: 18px 40px 24px;
 }
 .footer-bottom p {
   font-size: 12px;
@@ -116,7 +120,9 @@
 @media (max-width: 768px) {
   .footer-inner {
     grid-template-columns: 1fr 1fr;
+    padding: 36px 20px 24px;
   }
+  .footer-bottom { padding: 16px 20px 24px; }
 }
 @media (max-width: 480px) {
   .footer-inner {

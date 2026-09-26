@@ -42,23 +42,22 @@ defineProps({
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid rgba(0,0,0,.06);
-  transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-slow), box-shadow var(--transition-slow);
 }
 .product-card:hover {
-  border-color: rgba(0,113,227,.28);
   box-shadow: var(--shadow-md);
-  transform: translateY(-6px);
+  transform: translateY(-4px);
 }
-.product-card:hover .card-image img {
-  transform: scale(1.05);
+.product-card:hover .card-image :deep(img) {
+  transform: scale(1.04);
 }
 
 .card-image {
   position: relative;
   aspect-ratio: 1 / 1;
   min-height: 0;
-  background: #f5f5f7;
+  background: var(--bg-subtle);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -69,9 +68,8 @@ defineProps({
   width: 100%;
   height: 100%;
 }
-.card-image .el-image img,
-.card-image img {
-  transition: transform var(--transition-slow);
+.card-image :deep(img) {
+  transition: transform .7s var(--ease);
 }
 .img-fallback {
   width: 100%;
@@ -79,7 +77,7 @@ defineProps({
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #d1d5db;
+  color: #d2d2d7;
 }
 
 .card-actions {
@@ -87,24 +85,25 @@ defineProps({
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 8px;
-  background: linear-gradient(transparent, rgba(0,0,0,.15));
+  padding: 12px;
   display: flex;
   justify-content: flex-end;
   gap: 6px;
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transform: translateY(6px);
+  transition: opacity var(--transition), transform var(--transition);
 }
 .product-card:hover .card-actions {
   opacity: 1;
+  transform: none;
 }
 .product-card:focus-visible {
   outline: 3px solid rgba(0,113,227,.35);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 .card-body {
-  padding: 16px 18px 18px;
+  padding: 18px 20px 20px;
 }
 
 .card-name {
@@ -114,7 +113,8 @@ defineProps({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  letter-spacing: -.015em;
 }
 
 .card-footer {
@@ -124,15 +124,15 @@ defineProps({
 }
 
 .card-price {
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 19px;
+  font-weight: 600;
   color: var(--text);
-  letter-spacing: -.5px;
+  letter-spacing: -.02em;
 }
 .price-symbol {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--primary);
+  font-weight: 500;
+  margin-right: 1px;
 }
 
 .card-sales {
@@ -141,6 +141,6 @@ defineProps({
 }
 
 @media (hover: none) {
-  .card-actions { opacity: 1; }
+  .card-actions { opacity: 1; transform: none; }
 }
 </style>

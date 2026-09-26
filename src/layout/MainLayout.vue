@@ -53,7 +53,7 @@ onMounted(() => { if (userStore.isLogin) cartStore.fetchCart() })
 }
 
 /* Page transitions */
-.page-enter-active, .page-leave-active { transition: opacity .15s ease, transform .15s ease; }
-.page-enter-from { opacity: 0; transform: translateY(6px); }
-.page-leave-to { opacity: 0; transform: translateY(-6px); }
+.page-enter-active, .page-leave-active { transition: opacity .22s var(--ease), transform .22s var(--ease); }
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to { opacity: 0; }
 </style>

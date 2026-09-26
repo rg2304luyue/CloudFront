@@ -8,7 +8,7 @@
     </div>
 
     <div class="header-search">
-      <el-icon :size="16" color="#9c9cb8"><Search /></el-icon>
+      <el-icon :size="16" color="#86868b"><Search /></el-icon>
       <input
         v-model="searchKeyword"
         aria-label="搜索商品"
@@ -36,7 +36,7 @@
             <span v-if="userStore.role !== 'BUYER'" class="role-tag" :class="userStore.role">
               {{ userStore.roleLabel }}
             </span>
-            <el-icon :size="12" color="#9c9cb8"><ArrowDown /></el-icon>
+            <el-icon :size="12" color="#86868b"><ArrowDown /></el-icon>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -104,85 +104,89 @@ function handleCommand(cmd) {
 <style scoped>
 .app-header {
   position: sticky; top: 0; z-index: 200;
-  height: 64px;
-  background: rgba(255,255,255,.82);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--border);
+  height: 60px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
-  padding: 0 40px;
-  gap: 20px;
+  padding: 0 32px;
+  gap: 24px;
 }
 
 /* Logo */
 .header-left { display: flex; align-items: center; flex-shrink: 0; }
-.logo { display: flex; align-items: center; gap: 9px; }
+.logo { display: flex; align-items: center; gap: 10px; }
 .logo-icon {
-  width: 34px; height: 34px;
-  border-radius: 11px;
-  background: var(--primary-gradient);
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: var(--text);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform var(--transition-fast);
 }
-.logo-text { font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -.6px; }
+.logo:hover .logo-icon { transform: scale(1.06); }
+.logo-text { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -.03em; }
 
 /* Search */
 .header-search {
   flex: 1;
-  max-width: 500px;
+  max-width: 460px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(118,118,128,.10);
-  border: 1px solid var(--border);
+  background: rgba(118,118,128,.12);
   border-radius: var(--radius-full);
   padding: 0 16px;
-  height: 40px;
-  transition: all var(--transition-fast);
+  height: 36px;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
 }
+.header-search:hover { background: rgba(118,118,128,.16); }
 .header-search:focus-within {
-  border-color: var(--primary);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(0,113,227,.10);
+  box-shadow: 0 0 0 1px var(--primary) inset, var(--primary-ring);
 }
 .search-input {
   flex: 1;
   border: none;
   outline: none;
   background: transparent;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text);
 }
 .search-input::placeholder { color: var(--text-muted); }
 
 /* Right */
-.header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
 .cart-link {
   position: relative;
-  width: 40px; height: 40px;
+  width: 38px; height: 38px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
+  color: var(--text);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
-.cart-link:hover { background: var(--bg); color: var(--primary); }
+.cart-link:hover { background: var(--bg-hover); color: var(--primary); }
 .cart-dot {
   position: absolute;
-  top: 2px; right: 2px;
+  top: 2px; right: 1px;
   background: var(--danger);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
-  min-width: 16px; height: 16px;
-  line-height: 16px;
+  min-width: 17px; height: 17px;
+  line-height: 17px;
   text-align: center;
-  border-radius: 8px;
+  border-radius: var(--radius-full);
   padding: 0 4px;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 /* User */
@@ -190,21 +194,21 @@ function handleCommand(cmd) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px 4px 4px;
+  padding: 3px 12px 3px 3px;
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: background var(--transition-fast);
 }
-.user-area:hover { background: var(--bg); }
+.user-area:hover { background: var(--bg-hover); }
 
 .user-avatar {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: linear-gradient(180deg, #c7c7cc, #a1a1a6);
+  color: #fff;
   flex-shrink: 0;
 }
 
 .user-name {
-  max-width: 90px;
+  max-width: 96px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -215,13 +219,13 @@ function handleCommand(cmd) {
 
 .role-tag {
   font-size: 10px;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: var(--radius-full);
   font-weight: 600;
-  letter-spacing: .3px;
+  letter-spacing: .02em;
 }
-.role-tag.SELLER { background: #eff2ff; color: var(--primary); }
-.role-tag.ADMIN { background: #fef2f2; color: var(--danger); }
+.role-tag.SELLER { background: var(--primary-light); color: var(--primary); }
+.role-tag.ADMIN { background: var(--danger-light); color: var(--danger); }
 
 /* Guest */
 .guest-area {
@@ -230,15 +234,14 @@ function handleCommand(cmd) {
 }
 
 @media (max-width: 768px) {
-  .app-header { padding: 0 20px; gap: 12px; }
+  .app-header { padding: 0 16px; gap: 12px; }
   .header-search { max-width: none; padding: 0 12px; }
   .user-name, .role-tag, .user-area > .el-icon { display: none; }
-  .user-area { padding-right: 4px; }
+  .user-area { padding-right: 3px; }
 }
 
 @media (max-width: 480px) {
   .logo-text { display: none; }
-  .header-search { height: 36px; }
-  .guest-area .btn { padding: 5px 9px; }
+  .guest-area .btn { padding: 5px 10px; }
 }
 </style>

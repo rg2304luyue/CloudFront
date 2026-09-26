@@ -2,19 +2,19 @@
   <div class="page-container">
     <PageHeader title="商品审核" subtitle="审核卖家提交的商品" />
 
-    <div class="card" style="overflow:hidden">
+    <div class="card table-card">
       <el-table :data="products" style="width:100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="180" />
         <el-table-column label="主图" width="80">
           <template #default="{row}">
-            <el-image v-if="row.mainImage" :src="row.mainImage" fit="cover" style="width:48px;height:48px;border-radius:6px" />
+            <el-image v-if="row.mainImage" :src="row.mainImage" fit="cover" style="width:48px;height:48px;border-radius:10px" />
             <span v-else class="text-muted text-sm">无</span>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="名称" min-width="160" show-overflow-tooltip />
         <el-table-column label="价格" width="100">
           <template #default="{row}">
-            <span class="text-danger" style="font-weight:600">¥{{ row.price }}</span>
+            <span style="font-weight:600">¥{{ row.price }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="stock" label="库存" width="80" />
@@ -28,7 +28,7 @@
       </el-table>
     </div>
 
-    <div style="margin-top:18px;display:flex;justify-content:center">
+    <div class="pagination-wrap">
       <el-pagination
         background
         layout="prev,next"

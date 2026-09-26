@@ -40,55 +40,57 @@ function goBack() {
 <style scoped>
 .page-head {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .head-left {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 14px;
 }
 
 .back-btn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgba(0,0,0,.05);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 2px;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
-.back-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-light);
-}
+.back-btn:hover { background: rgba(0,0,0,.09); }
+.back-btn:active { transform: scale(.94); }
 
 .head-title {
-  font-size: 20px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -.3px;
+  letter-spacing: -.025em;
+  line-height: 1.15;
 }
 
 .head-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 3px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 6px;
 }
 
 .head-right {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .head-title { font-size: 24px; }
 }
 </style>

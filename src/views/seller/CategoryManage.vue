@@ -7,7 +7,7 @@
       </el-button>
     </div>
 
-    <div class="card" style="overflow:hidden;max-width:720px">
+    <div class="card table-card" style="max-width:720px">
       <el-table :data="flatCategories" style="width:100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="180" />
         <el-table-column label="名称" min-width="200">
@@ -137,5 +137,6 @@ onMounted(fetchData)
 </script>
 
 <style scoped>
-.head-flex { flex: 1; }
+.page-container > .page-head { align-items: flex-end; }
+.head-flex { flex: 1; margin-bottom: 0; }
 </style>

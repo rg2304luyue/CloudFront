@@ -179,21 +179,25 @@ function handleDelete(id) {
 </script>
 
 <style scoped>
-.head-flex { flex: 1; }
+.page-container > .page-head { align-items: flex-end; }
+.head-flex { flex: 1; margin-bottom: 0; }
 
 .addr-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  gap: 18px;
 }
 
 .addr-card {
-  padding: 20px;
+  padding: 24px 26px 20px;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
+.addr-card:hover { box-shadow: var(--shadow); }
 .addr-card.is-default {
-  border-color: var(--primary);
-  background: #fafaff;
+  box-shadow: 0 0 0 2px var(--primary), var(--shadow-sm);
+  border-color: transparent;
 }
 
 .addr-header {
@@ -204,52 +208,54 @@ function handleDelete(id) {
 }
 .addr-contact {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 12px;
 }
 .addr-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 17px;
+  letter-spacing: -.015em;
   color: var(--text);
 }
 .addr-phone {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .default-tag {
-  font-size: 11px;
-  padding: 2px 10px;
+  font-size: 12px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: var(--primary-light);
-  color: var(--primary);
-  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 500;
 }
 
 .addr-full {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 14px;
+  line-height: 1.65;
+  margin-bottom: 18px;
+  flex: 1;
 }
 
 .addr-actions {
   display: flex;
-  gap: 16px;
+  gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
 }
 .link {
   border: none;
   background: none;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
   color: var(--primary);
   padding: 0;
-  transition: color var(--transition-fast);
+  transition: color var(--transition-fast), opacity var(--transition-fast);
 }
+.link:hover { opacity: .75; }
 .link.danger {
-  color: var(--text-muted);
-}
-.link.danger:hover {
   color: var(--danger);
 }
 

@@ -20,7 +20,7 @@
         <div class="order-items">
           <div v-for="item in order.orderItems" :key="item.id" class="order-item-row">
             <el-image v-if="item.productImage" :src="item.productImage" fit="cover"
-              style="width:48px;height:48px;border-radius:6px;" />
+              style="width:48px;height:48px;border-radius:10px;" />
             <div class="item-info">
               <span class="item-name">{{ item.productName }}</span>
               <span class="item-meta">¥{{ item.price }} x {{ item.quantity }}</span>
@@ -97,23 +97,24 @@ usePolling(() => fetchOrders(true))
 </script>
 
 <style scoped>
-.order-list { display: flex; flex-direction: column; gap: 14px; }
-.order-card { padding: 20px 24px; }
-.order-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border-light); }
-.order-head-left { display: flex; align-items: center; gap: 12px; }
-.order-no { font-size: 12px; color: var(--text-muted); }
+.order-list { display: flex; flex-direction: column; gap: 16px; }
+.order-card { padding: 22px 28px; }
+.order-card:hover { box-shadow: var(--shadow); }
+.order-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); }
+.order-head-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.order-no { font-size: 13px; color: var(--text); }
 .order-time { font-size: 12px; color: var(--text-muted); }
 .badge { font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: var(--radius-full); }
-.order-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-.order-item-row { display: flex; align-items: center; gap: 12px; }
-.item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.item-name { font-size: 14px; color: var(--text); }
-.item-meta { font-size: 12px; color: var(--text-muted); }
-.item-total { font-size: 14px; font-weight: 600; color: var(--danger); }
-.order-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border-light); }
-.order-footer-info { font-size: 13px; color: var(--text-secondary); display: flex; gap: 12px; }
-.order-footer-actions { display: flex; align-items: center; gap: 16px; }
+.order-items { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.order-item-row { display: flex; align-items: center; gap: 14px; }
+.item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.item-name { font-size: 15px; font-weight: 500; color: var(--text); }
+.item-meta { font-size: 13px; color: var(--text-muted); }
+.item-total { font-size: 15px; font-weight: 600; color: var(--text); }
+.order-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--border-light); }
+.order-footer-info { font-size: 13px; color: var(--text-secondary); display: flex; gap: 14px; }
+.order-footer-actions { display: flex; align-items: center; gap: 18px; }
 .total-amount { font-size: 13px; color: var(--text-secondary); }
-.total-amount strong { color: var(--danger); font-size: 16px; }
-.pagination-wrap { display: flex; justify-content: center; margin-top: 28px; }
+.total-amount strong { color: var(--text); font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+.pagination-wrap { display: flex; justify-content: center; margin-top: 36px; }
 </style>

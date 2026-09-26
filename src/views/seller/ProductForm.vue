@@ -6,7 +6,7 @@
       back-to="/seller/products"
     />
 
-    <div class="card" style="padding:32px;max-width:640px">
+    <div class="card" style="padding:40px 44px 28px;max-width:680px;border-radius:var(--radius-lg)">
       <el-form :model="form" label-width="80px" ref="formRef" :rules="rules">
         <el-form-item label="名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入商品名称" />
@@ -35,7 +35,7 @@
             <template v-if="!form.mainImage">
               <input ref="fileInput" type="file" accept="image/*" @change="handleFileChange" class="file-input" />
               <div class="upload-trigger" @click="$refs.fileInput.click()">
-                <el-icon :size="28" color="#9c9cb8"><Plus /></el-icon>
+                <el-icon :size="28" color="#86868b"><Plus /></el-icon>
                 <span>{{ uploading ? '上传中...' : '点击上传图片' }}</span>
               </div>
             </template>
@@ -44,7 +44,7 @@
                 <el-image
                   :src="form.mainImage"
                   fit="contain"
-                  style="width:200px;height:150px;border:1px solid var(--border);border-radius:6px"
+                  style="width:200px;height:150px;border-radius:14px;box-shadow:0 0 0 1px var(--border-light)"
                 >
                   <template #error>
                     <div class="img-error">图片加载失败</div>
@@ -159,20 +159,21 @@ async function handleSubmit() {
 .file-input { display: none; }
 .upload-trigger {
   width: 200px; height: 150px;
-  border: 2px dashed var(--border);
-  border-radius: var(--radius);
+  border: 1.5px dashed rgba(0,0,0,.18);
+  border-radius: 14px;
+  background: var(--bg-subtle);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   gap: 8px; cursor: pointer;
-  transition: all var(--transition-fast);
-  color: var(--text-muted); font-size: 13px;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  color: var(--text-secondary); font-size: 13px;
 }
-.upload-trigger:hover { border-color: var(--primary); color: var(--primary); background: #fafaff; }
-.upload-preview { display: flex; flex-direction: column; gap: 8px; }
+.upload-trigger:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.upload-preview { display: flex; flex-direction: column; gap: 10px; }
 .preview-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .img-error {
   width: 200px; height: 150px;
   display: flex; align-items: center; justify-content: center;
-  background: #f5f6fa; color: var(--text-muted); font-size: 13px;
+  background: var(--bg); color: var(--text-muted); font-size: 13px;
 }
 </style>

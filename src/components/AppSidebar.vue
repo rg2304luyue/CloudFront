@@ -108,23 +108,30 @@ const activeMenu = computed(() => {
 
 <style scoped>
 .app-sidebar {
-  width: 248px;
-  min-height: calc(100vh - 64px - 48px);
-  background: rgba(255,255,255,.82);
-  border-right: 1px solid var(--border);
+  width: 240px;
+  min-height: calc(100vh - 60px);
+  background: rgba(250,250,252,.8);
+  border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   transition: width var(--transition-slow);
   flex-shrink: 0;
   overflow: hidden;
+  position: sticky;
+  top: 60px;
+  align-self: flex-start;
+  height: calc(100vh - 60px);
 }
 .app-sidebar.collapsed { width: 72px; }
 
 /* Menu */
 .sidebar-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: transparent;
   flex: 1;
   border-right: none !important;
-  padding: 18px 12px;
+  background: transparent;
+  padding: 16px 12px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -133,31 +140,32 @@ const activeMenu = computed(() => {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  padding: 18px 14px 7px;
+  letter-spacing: .04em;
+  padding: 18px 12px 6px;
   white-space: nowrap;
 }
 
 .sidebar-menu .el-menu-item {
-  height: 44px;
-  margin: 3px 0;
-  border-radius: 11px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
+  height: 38px;
+  line-height: 38px;
+  margin: 2px 0;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--text);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
+.sidebar-menu .el-menu-item .el-icon { color: var(--text-secondary); transition: color var(--transition-fast); }
 .sidebar-menu .el-menu-item:hover {
   background: var(--bg-hover);
-  color: var(--text);
 }
 .sidebar-menu .el-menu-item.is-active {
-  background: var(--primary);
-  color: #fff;
+  background: var(--primary-light);
+  color: var(--primary);
   font-weight: 600;
 }
 .sidebar-menu .el-menu-item.is-active .el-icon {
-  color: #fff;
+  color: var(--primary);
 }
 
 .cart-badge {
@@ -169,7 +177,7 @@ const activeMenu = computed(() => {
   height: 18px;
   line-height: 18px;
   text-align: center;
-  border-radius: 9px;
+  border-radius: var(--radius-full);
   padding: 0 5px;
   flex-shrink: 0;
   margin-left: auto;
@@ -177,27 +185,26 @@ const activeMenu = computed(() => {
 
 /* Footer */
 .sidebar-footer {
-  padding: 10px;
+  padding: 12px;
   border-top: 1px solid var(--border-light);
   display: flex;
   justify-content: center;
 }
 .collapse-btn {
-  width: 34px; height: 34px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--text-muted);
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 .collapse-btn:hover {
-  color: var(--primary);
-  border-color: var(--primary);
-  background: var(--primary-light);
+  color: var(--text);
+  background: var(--bg-hover);
 }
 
 @media (max-width: 768px) {

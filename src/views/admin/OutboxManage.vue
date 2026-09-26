@@ -114,7 +114,6 @@ onMounted(fetchMessages)
 </script>
 
 <style scoped>
-.table-card { overflow: hidden; }
 .message-count { font-size: 13px; color: var(--text-muted); }
 .retry-count { color: var(--danger); font-weight: 600; }
 .list-hint { margin-top: 12px; color: var(--text-muted); font-size: 12px; text-align: right; }

@@ -3,14 +3,14 @@
     <!-- Search & Filter Bar -->
     <div class="filter-bar">
       <div class="search-wrap">
-        <el-icon :size="18" color="#9c9cb8"><Search /></el-icon>
+        <el-icon :size="18" color="#86868b"><Search /></el-icon>
         <input
           v-model="keyword"
           placeholder="搜索商品名称..."
           @keyup.enter="search"
           class="search-input"
         />
-        <el-icon v-if="keyword" :size="16" color="#9c9cb8" class="clear-icon" @click="keyword='';search()">
+        <el-icon v-if="keyword" :size="16" color="#86868b" class="clear-icon" @click="keyword='';search()">
           <Close />
         </el-icon>
       </div>
@@ -155,53 +155,66 @@ function search() {
 .filter-bar {
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .search-wrap {
   flex: 1;
-  max-width: 400px;
+  max-width: 420px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
   border-radius: var(--radius-full);
-  padding: 0 16px;
-  height: 42px;
-  transition: all var(--transition-fast);
+  padding: 0 18px;
+  height: 44px;
+  box-shadow: var(--shadow-sm), 0 0 0 1px var(--border-light) inset;
+  transition: box-shadow var(--transition-fast);
 }
 .search-wrap:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,110,245,.08);
+  box-shadow: 0 0 0 1px var(--primary) inset, var(--primary-ring);
 }
 .search-input {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 15px;
   background: transparent;
   color: var(--text);
 }
 .search-input::placeholder { color: var(--text-muted); }
-.clear-icon { cursor: pointer; flex-shrink: 0; }
+.clear-icon {
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--transition-fast);
+}
+.clear-icon:hover { opacity: .7; }
 
 .filter-right {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-left: auto;
 }
 .cat-select { width: 180px; }
 .sort-select { width: 160px; }
+.filter-right :deep(.el-select__wrapper) {
+  min-height: 44px;
+  border-radius: var(--radius-full);
+  padding: 0 16px;
+  box-shadow: var(--shadow-sm), 0 0 0 1px var(--border-light) inset;
+}
+.filter-right :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 1px var(--primary) inset, var(--primary-ring);
+}
 
 /* Product Grid */
 .product-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-  transition: opacity 0.15s ease;
+  gap: 24px;
+  transition: opacity .2s var(--ease);
 }
 .product-grid.is-switching {
   opacity: 0.5;
@@ -211,7 +224,7 @@ function search() {
 .pagination-wrap {
   display: flex;
   justify-content: center;
-  margin-top: 32px;
+  margin-top: 40px;
 }
 
 @media (max-width: 1024px) {
@@ -219,9 +232,9 @@ function search() {
 }
 @media (max-width: 768px) {
   .filter-bar { flex-direction: column; }
-  .search-wrap { max-width: none; }
+  .search-wrap { max-width: none; width: 100%; }
   .filter-right { margin-left: 0; width: 100%; }
   .cat-select, .sort-select { flex: 1; }
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
 }
 </style>

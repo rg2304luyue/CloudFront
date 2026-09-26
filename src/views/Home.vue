@@ -32,7 +32,7 @@
 
       <LoadingState v-if="loading" text="正在加载..." />
       <div v-else-if="error" class="error-state">
-        <el-icon :size="40" color="#9c9cb8"><WarningFilled /></el-icon>
+        <el-icon :size="40" color="#86868b"><WarningFilled /></el-icon>
         <p>加载失败，请稍后重试</p>
         <button class="btn btn-primary" @click="fetchProducts">重新加载</button>
       </div>
@@ -73,58 +73,67 @@ onMounted(() => fetchProducts())
 </script>
 
 <style scoped>
-.home { padding-bottom: 48px; }
+.home { padding-bottom: 32px; }
 
 /* Hero */
 .hero {
   position: relative;
-  padding: 116px 24px 112px;
+  padding: 120px 24px 116px;
   text-align: center;
   overflow: hidden;
+  background: #fff;
 }
 .hero-bg {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 78% at 50% 0%, rgba(0,113,227,.13), transparent 68%),
-    radial-gradient(ellipse 36% 42% at 8% 85%, rgba(120,194,255,.14), transparent 76%),
-    #fbfbfd;
+    radial-gradient(ellipse 60% 55% at 50% 118%, rgba(0,113,227,.16), transparent 70%),
+    radial-gradient(ellipse 40% 40% at 88% 10%, rgba(191,90,242,.07), transparent 72%),
+    radial-gradient(ellipse 40% 40% at 10% 20%, rgba(90,200,250,.08), transparent 72%);
+  pointer-events: none;
 }
 .hero-content {
   position: relative;
-  max-width: 780px;
+  max-width: 820px;
   margin: 0 auto;
+  animation: rise .9s var(--ease) both;
 }
 .hero-tag {
   display: inline-block;
-  padding: 6px 14px;
-  border-radius: var(--radius-full);
-  background: rgba(0,113,227,.09);
-  color: var(--primary);
-  font-size: 12px;
+  color: #bf4800;
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 20px;
-  letter-spacing: .08em;
+  margin-bottom: 14px;
+  letter-spacing: .01em;
 }
 .hero h1 {
-  font-size: clamp(42px, 6vw, 72px);
+  font-size: clamp(44px, 6.4vw, 80px);
   font-weight: 700;
-  color: var(--text);
-  letter-spacing: -.065em;
-  margin-bottom: 18px;
-  line-height: 1.08;
+  letter-spacing: -.045em;
+  margin-bottom: 20px;
+  line-height: 1.05;
+  background: linear-gradient(180deg, #1d1d1f 30%, #4a4a50 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .hero p {
-  font-size: 18px;
+  font-size: clamp(17px, 2vw, 21px);
   color: var(--text-secondary);
-  margin-bottom: 36px;
-  line-height: 1.6;
+  margin-bottom: 40px;
+  line-height: 1.5;
+  letter-spacing: -.01em;
 }
 .hero-actions {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Section */
@@ -132,41 +141,42 @@ onMounted(() => fetchProducts())
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 28px;
 }
 .section-head h2 {
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -.04em;
+  letter-spacing: -.03em;
+  line-height: 1.15;
 }
 .section-sub {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-top: 4px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-top: 6px;
 }
 .more-link {
-  font-size: 13px;
-  color: var(--text-muted);
+  font-size: 15px;
+  color: var(--primary);
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: color var(--transition-fast);
+  gap: 2px;
   white-space: nowrap;
 }
-.more-link:hover { color: var(--primary); }
+.more-link:hover { text-decoration: underline; }
 
 /* Error State */
 .error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 48px 20px;
-  color: var(--text-muted);
+  gap: 14px;
+  padding: 64px 20px;
+  color: var(--text-secondary);
 }
 .error-state p {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* Product Grid */
@@ -180,8 +190,8 @@ onMounted(() => fetchProducts())
   .product-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 768px) {
-  .hero { padding: 76px 20px 72px; }
-  .hero h1 { font-size: 40px; }
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .hero { padding: 80px 20px 76px; }
+  .section-head h2 { font-size: 26px; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
 }
 </style>

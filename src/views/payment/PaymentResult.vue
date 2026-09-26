@@ -3,7 +3,7 @@
     <div class="result-card card">
       <!-- Loading -->
       <div v-if="loading" class="result-content">
-        <el-icon :size="48" color="#9c9cb8" class="spin"><Loading /></el-icon>
+        <el-icon :size="48" color="#86868b" class="spin"><Loading /></el-icon>
         <h2>正在查询支付结果</h2>
         <p>请稍候...</p>
       </div>
@@ -162,16 +162,23 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .result-card {
-  max-width: 520px;
-  margin: 60px auto;
-  padding: 48px 40px;
+  max-width: 540px;
+  margin: 56px auto;
+  padding: 56px 48px 48px;
   text-align: center;
+  border-radius: var(--radius-xl);
 }
 
 .result-content {
   display: flex;
   flex-direction: column;
   align-items: center;
+  animation: pop .5s var(--ease) both;
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: scale(.96); }
+  to { opacity: 1; transform: none; }
 }
 
 .result-icon {
@@ -180,22 +187,22 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
-.result-icon.success { background: #f0fdf6; color: #22c55e; }
-.result-icon.pending { background: #fffbeb; color: #f59e0b; }
-.result-icon.fail { background: #fef2f2; color: #ef4444; }
+.result-icon.success { background: var(--success-light); color: #34c759; }
+.result-icon.pending { background: var(--warning-light); color: #ff9f0a; }
+.result-icon.fail { background: var(--danger-light); color: #ff3b30; }
 
-.result-content h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
-.result-content p { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; line-height: 1.6; }
+.result-content h2 { font-size: 28px; font-weight: 700; letter-spacing: -.025em; margin-bottom: 10px; color: var(--text); }
+.result-content p { font-size: 15px; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; max-width: 400px; }
 
-.result-actions { display: flex; gap: 10px; }
+.result-actions { display: flex; gap: 12px; }
 
-.spin { animation: spin 1s linear infinite; margin-bottom: 20px; }
+.spin { animation: spin 1s linear infinite; margin-bottom: 24px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 480px) {
-  .result-card { padding: 32px 20px; margin: 32px auto; }
+  .result-card { padding: 36px 22px; margin: 32px auto; }
   .result-actions { flex-direction: column; width: 100%; }
   .result-actions .btn { width: 100%; justify-content: center; }
 }

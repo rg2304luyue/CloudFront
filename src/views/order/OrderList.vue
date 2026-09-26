@@ -133,30 +133,32 @@ function handleReceive(id) {
 .order-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .order-card {
-  padding: 20px 24px;
+  padding: 22px 28px;
   cursor: default;
 }
+.order-card:hover { box-shadow: var(--shadow); }
 
 .order-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
   border-bottom: 1px solid var(--border-light);
 }
 .order-head-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  min-width: 0;
 }
 .order-no {
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 13px;
+  color: var(--text);
 }
 .order-time {
   font-size: 12px;
@@ -173,50 +175,56 @@ function handleReceive(id) {
 
 .order-body {
   cursor: pointer;
+  margin: -6px -10px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: background var(--transition-fast);
 }
+.order-body:hover { background: rgba(0,0,0,.025); }
 
 .order-info-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
 }
 .info-label {
   font-size: 12px;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .4px;
 }
 .info-value {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 14px;
+  color: var(--text);
 }
 .amount {
-  color: var(--danger);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.02em;
 }
 
 .order-foot {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding-top: 14px;
-  margin-top: 14px;
-  border-top: 1px solid var(--border-light);
+  gap: 10px;
+  margin-top: 18px;
 }
+.order-foot:empty { display: none; }
+.order-foot .btn-danger { background: var(--primary); }
+.order-foot .btn-danger:hover:not(:disabled) { background: var(--primary-hover); }
 
 .pagination-wrap {
   display: flex;
   justify-content: center;
-  margin-top: 28px;
+  margin-top: 36px;
 }
 
 @media (max-width: 600px) {
+  .order-card { padding: 18px 20px; }
   .order-info-grid {
     grid-template-columns: 1fr;
   }
