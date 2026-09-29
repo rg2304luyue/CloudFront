@@ -30,7 +30,8 @@ CloudFront/
 │   └── payment-result.test.mjs          #   支付结果页轮询与判定（5 项）
 └── src/
     ├── main.js                          # 入口：注册 Vue/Pinia/Router/ElementPlus/图标；显式导入命令式服务 CSS（MessageBox/Message/Notification）
-    ├── App.vue                          # 根组件，挂载时恢复登录态
+    ├── App.vue                          # 根组件：监听登录失效事件 + 多标签页 storage 同步
+
     │
     ├── api/                             # 后端 API 封装（按微服务拆分）
     │   ├── auth.js                      #   登录 / 注册
@@ -45,7 +46,8 @@ CloudFront/
     │   └── cart.js                      #   购物车列表、勾选统计
     │
     ├── router/
-    │   └── index.js                     # 22 条路由 + 登录守卫 + 角色守卫
+    │   └── index.js                     # 23 条路由记录 + 登录守卫 + 已登录反向拦截 + 角色守卫
+
     │
     ├── layout/
     │   └── MainLayout.vue               # 顶栏 + 侧栏 + 内容 + 底栏 框架
@@ -87,11 +89,12 @@ CloudFront/
     ├── composables/
     │   ├── useCheckoutRequest.js        # 下单请求状态机（令牌复用 / 提交 / 结果轮询 / 会话恢复）
     │   ├── usePayment.js                # 支付宝支付处理（同步开窗防拦截）
-    │   ├── usePolling.js                # 通用轮询（setTimeout 链 + visibilitychange 自动暂停/恢复）
-    │   └── usePagination.js             # 通用分页逻辑（当前没有页面引用）
+    │   └── usePolling.js                # 通用轮询（setTimeout 链 + visibilitychange 自动暂停/恢复）
     └── utils/
-        ├── request.js                   # Axios 实例 + 请求/响应拦截器
-        └── auth.js                      # localStorage 读写 Token/用户
+        ├── request.js                   # Axios 实例 + 请求/响应拦截器（401 并发防重入）
+        ├── auth.js                      # localStorage 读写 Token/用户
+        └── format.js                    # 金额格式化 formatAmount（保留两位小数）
+
 ```
 
 ### utils/auth.js
@@ -107,7 +110,8 @@ logout()                                         // 清 token + 用户
 
 ## 路由表
 
-22 条路由（17 条 MainLayout 子路由 + `/login`、`/register`、`/403`、`/500`、`/:pathMatch(.*)*`；`/` 为重定向包装），`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
+23 条路由记录：17 条 MainLayout 子路由 + `/login`、`/register`、`/403`、`/500`、`/:pathMatch(.*)*` 五条顶层路由 + `/` 重定向包装。`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
+
 
 | 路径 | 页面 | 认证 | 角色限制 | 说明 |
 |---|---|---|---|---|
@@ -139,13 +143,16 @@ logout()                                         // 清 token + 用户
 ```text
 1. 设置 document.title
 2. 未登录但 store 认为已登录 → 先 userStore.logout()（同步 token 状态）
-3. 若 to.meta.requireAuth && !isLoggedIn()
+3. 已登录却访问 /login、/register → next('/home')（反向拦截）
+4. 若 to.meta.requireAuth && !isLoggedIn()
    → redirect: /login?redirect=<原路径>
-4. 已登录且 userInfo 未加载 → await fetchUserInfo()（失败时未登录跳 /login，否则跳 /500）
-5. 若 to.meta.roles 存在
+5. 已登录且 userInfo 未加载 → await fetchUserInfo()（失败时未登录跳 /login，否则跳 /500）
+   —— 登录态的最终恢复发生在这里，不在 App.vue
+6. 若 to.meta.roles 存在
    从 Pinia userStore 读用户角色（默认 BUYER）
    若角色不在允许列表 → redirect: /403
 ```
+
 
 ---
 
@@ -182,9 +189,9 @@ Register.vue 提交表单
 ### 启动恢复
 
 ```text
-App.vue onMounted
-  → 若 localStorage 有 token
-    → userStore.fetchUserInfo() 恢复用户状态
+不发生在 App.vue。localStorage 里的 token 只是本地缓存，
+真正的恢复在路由守卫第 5 步：首次导航时 await fetchUserInfo()，
+拿到 /api/users/me 后才把用户信息与角色视为有效。
 ```
 
 ### 登出
@@ -195,6 +202,17 @@ AppHeader 退出按钮
   → userStore.logout()      ← 清 token + userInfo + localStorage，并在内部调用 cartStore.reset()
   → router.push('/home')
 ```
+
+### 多标签页同步（App.vue）
+
+```text
+1. 其他标签页登出（storage 事件，key 为 cloud_token 或 clear）
+   → 本页 userStore.logout()，并带 redirect 跳 /login
+2. 其他标签页换了账号（token 变化）
+   → 本页同步 token、清空 userInfo、cartStore.reset()，再 fetchUserInfo() 与最新登录态对齐
+监听挂载于 App.vue onMounted，卸载时移除。
+```
+
 
 ### localStorage 键
 
@@ -224,7 +242,8 @@ AppHeader 退出按钮
 成功时返回 res.data（即 R<T>），调用方读取 r.data
 ```
 
-`handleUnauthorized()`：移除 token → 派发 `cloud-auth-expired` 事件（`App.vue` 监听后调用 `userStore.logout()`，同时清用户与购物车）→ 当前不在登录页时 `router.push({ name: 'Login', query: { redirect: 当前完整路径 } })`。这是路由跳转，不会整页刷新。
+`handleUnauthorized()`：模块级 `handling401` 标志防止并发 401 重复清理与重复跳转（业务码 401 的 toast 仍会逐条弹出）；移除 token → 派发 `cloud-auth-expired` 事件（`App.vue` 监听后调用 `userStore.logout()`，同时清用户与购物车）→ 当前不在登录页时 `router.push({ name: 'Login', query: { redirect: 当前完整路径 } })`。这是路由跳转，不会整页刷新。
+
 
 ### 响应拦截器 — 错误
 
@@ -264,16 +283,17 @@ AppHeader 退出按钮
 
 | 属性 | 逻辑 |
 |---|---|
-| `checkedCount` | 勾选商品的行数（items.filter(i => i.checked).length） |
-| `totalPrice` | checked 商品的 `price × quantity` 总和 |
+| `checkedCount` | 勾选商品的行数（items.filter(i => i.checked).length），**包含已下架商品**，失效过滤在 Cart.vue 内 |
+| `totalPrice` | 勾选商品合计，以分为单位累加（每条 `price` 先四舍五入到分），同样包含失效商品 |
+
 
 **Actions**：`fetchCart()`、`add()`、`updateQty()`、`toggleCheck()`、`checkAll()`、`remove()`、`clear()`、`reset()`
 
 | Action | 行为 |
 |---|---|
-| `fetchCart()` | GET /api/cart → 赋值 `items`；仅 401 认证失败时清空，网络/服务错误保留原数据 |
+| `fetchCart()` | GET /api/cart → 赋值 `items`，返回 `true/false` 表示是否成功；仅 401 认证失败时清空，网络/服务错误保留原数据 |
 | `add(productId, qty)` | POST /api/cart/items → 自动 `fetchCart()` 同步 |
-| `updateQty(id, qty)` | 乐观更新：立即修改本地 quantity，失败回滚旧值 |
+| `updateQty(id, qty, rollbackQuantity)` | 乐观更新：立即修改本地 quantity，失败回滚到 `rollbackQuantity`（默认取当前值） |
 | `toggleCheck(id, checked)` | 乐观更新：立即修改本地 checked，失败回滚 |
 | `checkAll(checked)` | PATCH /api/cart/items/check-all，乐观更新全部 checked，失败回滚 |
 | `remove(productId)` | 乐观更新：立即从本地删除，失败回滚还原 |
@@ -324,7 +344,9 @@ updateProduct(id, data)                // PUT /api/seller/products/:id
 deleteProduct(id)                      // DELETE /api/seller/products/:id
 getPendingProducts({ page, size })     // GET /api/admin/products/pending
 reviewProduct(id, approved)            // PATCH /api/admin/products/:id/review (JSON body)
+updateProductStatus(id, status)        // PUT /api/products/admin/:id/status (JSON body: {status})（仅 ADMIN）
 uploadImage(file)                      // POST /api/products/upload (FormData)
+
 ```
 
 ### cart.js
@@ -476,6 +498,11 @@ Hero Banner → 白底柔和光晕 + 渐变大标题"发现好物，品质生活
 PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 表格视图 → 表头/每行：勾选框 | 缩略图(80px) | 商品名 | 单价 | 数量(el-input-number，独立防抖，避免多商品互锁) | 小计(price×quantity) | 删除
          行 hover 变背景色，缩略图和商品名可点击跳转商品详情
+失效商品 → status === 0 时整行置灰、名称后显示"已失效"、数量输入禁用；
+         本地 checkedItems 排除失效商品，结算弹窗与提交内容都不含失效商品
+         （注意底部「已选 N 件 / 合计」用的是 cartStore.checkedCount 与 totalPrice，仍会计入失效商品）
+数量上限 → max(1, min(stock, 999))
+
 全选     → 顶部勾选框 + 底栏全选复选框，支持半选状态（indeterminate）
          toggleAll → cartStore.checkAll(v)（一次 PATCH）；下单请求锁定期间不执行
 粘性底栏 → 毛玻璃胶囊条，position: sticky; bottom: 20px; 始终可见
@@ -486,9 +513,12 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
          收货地址 select（默认选中默认地址，无地址提示"去添加"）
          商品清单列表（名称 ×数量 + 小计）| 备注(选填)
          合计金额 | 提交订单按钮（有 loading 状态）
+         弹窗内容按 submitted 快照渲染：打开弹窗前先强制拉一次最新购物车，
+         并显示记录里的商品快照，保证「弹窗展示的内容 == 实际提交的内容」
          提交 → 交给 useCheckoutRequest（见「共享模块」）；SUCCEEDED 后跳转订单详情
 响应式   → 768px 以下隐藏单价/小计列，底栏纵向排列
 ```
+
 
 ### 订单列表（OrderList.vue）
 
@@ -514,8 +544,10 @@ PageHeader 带返回按钮
   后端一同返回订单明细列表（orderItems），后续可展示购买的商品清单
 待支付状态显示"立即支付"按钮
 已发货状态显示"确认收货"按钮
-订单不存在 → EmptyState
+加载态 → HTTP 404 或业务码 3001（订单不存在/非本人订单）显示 EmptyState"订单不存在"，
+        其他失败（网络、服务端错误）显示可重试的"重新加载"态
 ```
+
 
 ### 支付结果（PaymentResult.vue）
 
@@ -553,12 +585,14 @@ PageHeader 带返回按钮
 ### 商品管理（ProductManage.vue）
 
 ```
-表格 → ID | 缩略图 | 名称 | 价格 | 库存 | 销量 | 状态标签
+表格 → ID | 缩略图 | 名称 | 价格 | 库存 | 销量 | 状态标签（仅展示，上下架开关在商品表单内）
 操作 → 添加(链接到表单) | 编辑 | 删除(确认)
 状态 → 上架(success 绿) / 下架(info 灰) / 审核中(warning 橙)
+加载态 → 初次加载失败显示"重新加载"，不显示空列表
 自动刷新 → 每 30s 静默拉取最新商品状态（无需手动刷新即可看到审核结果）
-分页     → 后端返回真实 total，分页器可正确显示总页数
+分页     → 后端返回真实 total，分页器可正确显示总页数；翻页事件用箭头包装，避免误传页码对象
 ```
+
 
 ### 商品表单（ProductForm.vue）
 
@@ -567,16 +601,22 @@ PageHeader 带返回按钮
          主图上传(点击上传区域 → 选图片文件 → uploadImage() 上传 MinIO → 返回 URL 填入表单
                   + 实时预览 200×150 + URL 输入框(可手动修改) + 删除按钮)
         状态(仅ADMIN可见)
-提交 → addProduct() 或 updateProduct()
+编辑回填 → 只按白名单字段回填，避免后端多余字段污染表单
+提交 → addProduct() 或 updateProduct()；
+      ADMIN 修改状态时另外调用 updateProductStatus()（PUT /api/products/admin/:id/status）
+      非 ADMIN 保存后提示"修改后商品将重新进入审核"
 路由复用于添加(/add)和编辑(/:id/edit)
 ```
+
 
 ### 分类管理（CategoryManage.vue）
 
 ```
 树形表格 → 名称(缩进显示层级) | 排序 | 操作
 操作 → 添加(选父分类 + 名称 + 排序) | 编辑 | 删除(有子分类不可删)
+成环保护 → 编辑时的父分类选项会排除自身及其全部后代，展平列表按 id 去重
 ```
+
 
 ### 用户管理（UserList.vue）
 
@@ -593,7 +633,9 @@ PageHeader 带返回按钮
 表格 → ID | 缩略图 | 名称 | 价格 | 库存 | 卖家ID | 通过/拒绝按钮
 操作后 → 审批后立即从列表移除（乐观更新）
 自动刷新 → 每 30s 静默拉取新待审商品（无需手动刷新）
+分页 → el-pagination 翻页事件已修正，不再把页码对象当作页码传入
 ```
+
 
 ### 卖家订单管理（SellerOrderManage.vue）
 
@@ -602,8 +644,10 @@ PageHeader 带返回按钮
          商品明细行：缩略图 + 名称 + 单价×数量 + 小计
          底部：收货人信息 + 合计金额
          已支付订单显示"发货"按钮 → 确认后 status 改为已发货
+加载态 → 初次加载失败显示"重新加载"，不显示空列表
 分页 → el-pagination
 ```
+
 
 ### 失败消息（OutboxManage.vue）
 
@@ -657,10 +701,13 @@ function handlePay(orderNo)
   // Step 3: 确认 → createAlipayPayment(orderNo) 获取支付表单 HTML
   //         → 校验支付表单（HTTPS + 支付宝域名白名单 + 必填字段）后在已打开窗口写入并 submit()，不使用 document.write
   // Step 4: 取消或失败 → w.close() 关闭窗口
+  // 错误提示去重：用户取消静默；业务/HTTP/网络错误已由 request.js 拦截器提示，不再重复 toast；
+  //                只有本地校验错误（支付表单/地址不受信任等）才补充提示
 isPaying(orderNo)
   // 该订单从点击支付到支付窗口关闭期间都返回 true（按订单加锁，30 分钟超时自动释放）
   // 因此支付宝窗口打开期间，订单列表按钮也会显示"正在准备…"并禁用
 ```
+
 
 支付表单只允许提交到 `openapi.alipay.com` 或 `openapi-sandbox.dl.alipaydev.com` 的 `/gateway.do`，且必须是 POST。
 
@@ -673,7 +720,9 @@ const checkout = useCheckoutRequest(userStore, async orderId => { /* 跳转订�
 // 返回 { pending, status, message, busy, locked, initialize, prepare, submit, refresh }
 ```
 
-- **令牌**：`prepare()` 通过 `GET /api/orders/token` 获取或复用下单令牌。提交前先把令牌和原提交参数（地址、备注）写入 `sessionStorage['cloud-checkout:<userId>']`，再调用 `POST /api/orders`。
+- **令牌**：`prepare()` 通过 `GET /api/orders/token` 获取或复用下单令牌。提交前先把令牌和原提交参数（地址、备注、**商品快照 items**）写入 `sessionStorage['cloud-checkout:<userId>']`，再调用 `POST /api/orders`。写入失败则不发请求。
+- **记录校验**：`initialize()` 要求记录含 token、submitted 与 items 数组；缺失 `items` 时抛错而不是用当前购物车勾选代替，避免恢复出的弹窗与实际提交内容不一致。
+- **缺地址保护**：已提交请求若没有地址，`submit()` 直接抛错，提示先去订单列表核实结果。
 - **状态**：READY / PROCESSING / SUCCEEDED / FAILED / EXPIRED / UNKNOWN。
   - PROCESSING、COMPENSATING、UNKNOWN（超时或网络中断）→ 只用 `GET /api/orders/requests/{token}` 查询原请求，每 2 秒一次，最多 20 次，不会换令牌重新下单。
   - 业务码 42201 → 回到 READY，保留同一令牌，可修正地址或备注后重试。
@@ -693,16 +742,30 @@ export function usePolling(pollFn, { interval = 30000 })
   // 返回 { start, stop } 供手动控制
 ```
 
-### usePagination.js（`composables/usePagination.js`）
+### format.js（`utils/format.js`）
 
-通用分页 composable（目前没有页面引用，各列表页自行实现分页）：
+金额格式化工具，被 Cart、OrderList、OrderDetail 引用：
 
 ```js
-export function usePagination(fetchFn, { defaultSize = 10, immediate = true })
-  // 返回: { page, size, total, list, loading, fetchData, onPageChange, reset }
+export function formatAmount(v)
+  // Number(v).toFixed(2)；null / NaN / Infinity 返回 '0.00'（数字字符串仍按数值格式化）
 ```
 
 ---
+
+
+## 近期更新（2026-09-29）
+
+| 类别 | 变更 | 涉及文件 |
+|------|------|----------|
+| 失效商品 | 购物车失效商品置灰并标记"已失效"，结算弹窗与提交内容都不含失效商品，数量上限改为 `max(1, min(stock, 999))` | `views/cart/Cart.vue` |
+| 结算一致性 | 弹窗展示内容与实际提交快照一致；打开弹窗前强制刷新购物车 | `views/cart/Cart.vue`、`composables/useCheckoutRequest.js` |
+| 多标签页 | storage 事件同步登录态：他页登出带 redirect 跳登录，换号后重置本地购物车并重拉用户信息 | `App.vue` |
+| 登录态 | 已登录访问 `/login`、`/register` 直接跳 `/home`；登录 redirect 只接受以 `/` 开头的路径 | `router/index.js`、`views/Login.vue` |
+| ADMIN 上下架 | 新增 `updateProductStatus`，商品表单内 ADMIN 改状态时调用新接口 | `api/product.js`、`views/seller/ProductForm.vue` |
+| 金额与分页 | 新增 `formatAmount` 统一金额显示；修复 3 处 `@current-change` 误传页码对象；4 处补加载失败重试态 | `utils/format.js`、`views/**` |
+| 其它 | 401 并发防重入、支付错误提示去重、分类树成环保护、订单详情区分"不存在"与"加载失败" | `utils/request.js`、`composables/usePayment.js`、`views/seller/CategoryManage.vue`、`views/order/OrderDetail.vue` |
+| 清理 | 删除未被引用的 `usePagination.js` | `composables/` |
 
 ## 近期更新（2026-09）
 
@@ -711,6 +774,7 @@ export function usePagination(fetchFn, { defaultSize = 10, immediate = true })
 | 下单请求恢复 | 新增 `useCheckoutRequest`：令牌与原参数先落 sessionStorage，结果未知时只查询原请求，明确失败才换令牌 | `composables/useCheckoutRequest.js`、`views/cart/Cart.vue`、`api/order.js`、`utils/request.js` |
 | 视觉重设计 | Apple 风格设计令牌与公共类，Element Plus 覆盖改为 `html` 前缀，清理旧配色与失效样式，错误页样式合并 | `assets/*.css`、全部组件与页面的 `<style>` |
 | 测试 | 新增下单请求恢复与支付结果页的 Node 测试 | `tests/*.test.mjs` |
+
 
 ## 近期更新（2026-06-04）
 
@@ -787,6 +851,6 @@ The browser return page is only one confirmation path. If the return is interrup
 
 ### Clarifications for earlier sections
 
-- `cloud_user` is a local cache only. Startup still verifies the token by fetching `/api/users/me` before treating user information or roles as current.
+- `cloud_user` is a local cache only. The token is verified by fetching `/api/users/me` on the first navigation guard run, not during app startup (see 启动恢复).
 - `cartStore.fetchCart()` clears items on authentication failure only. It preserves existing cart data for transient network or server failures.
 - `usePolling` waits for a poll request to settle before scheduling the next `setTimeout`; it is not a raw `setInterval` loop.
