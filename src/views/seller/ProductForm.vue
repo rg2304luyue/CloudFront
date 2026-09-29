@@ -76,7 +76,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCategoryTree, getProductDetail, addProduct, updateProduct, uploadImage } from '@/api/product'
+import { getCategoryTree, getProductDetail, addProduct, updateProduct, updateProductStatus, uploadImage } from '@/api/product'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import PageHeader from '@/components/PageHeader.vue'
@@ -95,6 +95,8 @@ const form = reactive({
   name: '', categoryId: null, price: 0, stock: 0,
   description: '', mainImage: '', images: null, status: 1
 })
+// 编辑时记录原始状态，用于判断 ADMIN 是否修改了上下架状态
+const originalStatus = ref(1)
 
 const rules = {
   name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
@@ -131,7 +133,12 @@ onMounted(async () => {
   categoryTree.value = catRes.data || []
   if (isEdit.value) {
     const res = await getProductDetail(route.params.id)
-    Object.assign(form, res.data)
+    // 白名单字段回填，避免后端多余字段污染表单（status 仅用于前端展示对比）
+    const d = res.data || {}
+    for (const key of ['categoryId', 'name', 'description', 'price', 'stock', 'mainImage', 'images', 'status']) {
+      if (d[key] !== undefined) form[key] = d[key]
+    }
+    originalStatus.value = form.status
   }
 })
 
@@ -142,7 +149,18 @@ async function handleSubmit() {
   try {
     if (isEdit.value) {
       await updateProduct(route.params.id, { ...form })
+      // ADMIN 修改了上下架状态时，单独调用状态接口
+      if (userStore.isAdmin && form.status !== originalStatus.value) {
+        try {
+          await updateProductStatus(route.params.id, form.status)
+          originalStatus.value = form.status
+        } catch (e) {
+          ElMessage.error(`商品已更新，但状态修改失败：${e?.message || '未知原因'}`)
+          return
+        }
+      }
       ElMessage.success('更新成功')
+      if (!userStore.isAdmin) ElMessage.warning('修改后商品将重新进入审核')
     } else {
       await addProduct(form)
       ElMessage.success('添加成功')

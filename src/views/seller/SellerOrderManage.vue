@@ -3,6 +3,7 @@
     <PageHeader title="订单管理" subtitle="管理包含您商品的订单" />
 
     <LoadingState v-if="loading" />
+    <EmptyState v-else-if="loadFailed" description="订单加载失败，请检查网络后重试" show-action @action="fetchOrders()" action-text="重新加载" />
     <EmptyState v-else-if="orders.length === 0" description="暂无订单" />
 
     <div v-else class="order-list">
@@ -46,7 +47,7 @@
 
     <div v-if="total > size" class="pagination-wrap">
       <el-pagination v-model:current-page="page" :page-size="size" :total="total"
-        layout="prev, pager, next" @current-change="fetchOrders" />
+        layout="prev, pager, next" @current-change="() => fetchOrders()" />
     </div>
   </div>
 </template>
@@ -66,15 +67,19 @@ const loading = ref(true)
 const total = ref(0)
 const page = ref(1)
 const size = ref(10)
+const loadFailed = ref(false)
 
 async function fetchOrders(silent = false) {
-  if (!silent) loading.value = true
+  if (!silent) {
+    loading.value = true
+    loadFailed.value = false
+  }
   try {
     const r = await getSellerOrders({ page: page.value, size: size.value })
     orders.value = r.data || []
     total.value = r.total || 0
-  } catch (e) {
-    if (!silent) throw e
+  } catch {
+    if (!silent) loadFailed.value = true
   } finally {
     if (!silent) loading.value = false
   }

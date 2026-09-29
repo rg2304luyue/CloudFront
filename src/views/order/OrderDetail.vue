@@ -25,7 +25,7 @@
         </div>
         <div class="field">
           <span class="label">订单金额</span>
-          <strong class="value amount">¥{{ order.totalAmount }}</strong>
+          <strong class="value amount">¥{{ formatAmount(order.totalAmount) }}</strong>
         </div>
         <div class="field">
           <span class="label">支付时间</span>
@@ -60,6 +60,7 @@
       </div>
     </div>
 
+    <EmptyState v-else-if="loadFailed" description="订单加载失败，请检查网络后重试" show-action @action="loadOrder" action-text="重新加载" />
     <EmptyState v-else description="订单不存在" @action="$router.back()" action-text="返回" />
   </div>
 </template>
@@ -71,6 +72,7 @@ import { getOrderDetail, receiveOrder } from '@/api/order'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { usePayment } from '@/composables/usePayment'
 import { orderStatusText as statusText } from '@/constants/orderStatus'
+import { formatAmount } from '@/utils/format'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -80,15 +82,25 @@ const router = useRouter()
 const { handlePay, isPaying } = usePayment()
 const order = ref(null)
 const loading = ref(true)
+const loadFailed = ref(false)
 
-onMounted(async () => {
+async function loadOrder() {
+  loading.value = true
+  loadFailed.value = false
   try {
     const r = await getOrderDetail(route.params.id)
     order.value = r.data
+  } catch (e) {
+    // 仅"订单不存在/非本人订单"（后端统一返回业务码 3001）与 HTTP 404 展示空态；
+    // 其余（5xx、网络错误等）一律展示可重试的失败态，避免真实故障被"订单不存在"掩盖
+    const notFound = e?.response?.status === 404 || e?.code === 3001
+    if (!notFound) loadFailed.value = true
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadOrder)
 
 function handleReceive(id) {
   ElMessageBox.confirm('请确认已经收到商品', '确认收货', { type: 'info' })

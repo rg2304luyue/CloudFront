@@ -82,6 +82,12 @@ router.beforeEach(async (to, from, next) => {
     userStore.logout()
   }
 
+  // 已登录用户访问登录/注册页时重定向到首页
+  if (isLoggedIn() && (to.name === 'Login' || to.name === 'Register')) {
+    next('/home')
+    return
+  }
+
   if (to.meta.requireAuth && !isLoggedIn()) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
     return

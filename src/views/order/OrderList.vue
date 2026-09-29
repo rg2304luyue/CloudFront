@@ -22,7 +22,7 @@
           <div class="order-info-grid">
             <div class="info-item">
               <span class="info-label">订单金额</span>
-              <strong class="info-value amount">¥{{ order.totalAmount }}</strong>
+              <strong class="info-value amount">¥{{ formatAmount(order.totalAmount) }}</strong>
             </div>
             <div class="info-item" v-if="order.receiverAddress">
               <span class="info-label">收货地址</span>
@@ -69,6 +69,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import { usePolling } from '@/composables/usePolling'
 
 import { orderStatusText as statusText } from '@/constants/orderStatus'
+import { formatAmount } from '@/utils/format'
 
 const router = useRouter()
 const { handlePay, isPaying } = usePayment()

@@ -115,6 +115,8 @@ async function addToCart() {
   try {
     await cartStore.add(product.value.id, quantity.value)
     ElMessage.success('已添加到购物车')
+  } catch {
+    ElMessage.error('操作失败，请重试')
   } finally {
     adding.value = false
   }

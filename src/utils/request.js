@@ -3,12 +3,24 @@ import { getToken, removeToken } from './auth'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
 
-function handleUnauthorized() {
+let handling401 = false
+
+async function handleUnauthorized() {
+  if (handling401) return
+  handling401 = true
   removeToken()
   window.dispatchEvent(new Event('cloud-auth-expired'))
 
   if (router.currentRoute.value.name !== 'Login') {
-    router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } })
+    try {
+      await router.push({ name: 'Login', query: { redirect: router.currentRoute.value.fullPath } })
+    } catch {
+      // 路由跳转失败（重复导航等）忽略，保证标志位复位
+    } finally {
+      handling401 = false
+    }
+  } else {
+    handling401 = false
   }
 }
 

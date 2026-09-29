@@ -68,8 +68,18 @@ const catForm = reactive({ name: '', parentId: null, sort: 0 })
 
 const filteredTree = computed(() => {
   if (!editingCat.value?.id) return categoryTree.value
+  // 收集当前编辑节点及其所有后代 id，避免把父分类改成自己的后代形成环
+  const excluded = new Set()
+  function collect(nodes, inside) {
+    for (const n of nodes) {
+      const hit = inside || n.id === editingCat.value.id
+      if (hit) excluded.add(n.id)
+      if (n.children) collect(n.children, hit)
+    }
+  }
+  collect(categoryTree.value, false)
   function filterNodes(nodes) {
-    return nodes.filter(n => n.id !== editingCat.value.id).map(n => ({
+    return nodes.filter(n => !excluded.has(n.id)).map(n => ({
       ...n,
       children: n.children ? filterNodes(n.children) : []
     }))
@@ -79,8 +89,11 @@ const filteredTree = computed(() => {
 
 const flatCategories = computed(() => {
   const result = []
+  const visited = new Set()
   function flatten(list, level) {
     for (const c of list) {
+      if (visited.has(c.id)) continue
+      visited.add(c.id)
       result.push({ ...c, _level: level })
       if (c.children) flatten(c.children, level + 1)
     }

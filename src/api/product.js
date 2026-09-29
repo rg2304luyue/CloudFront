@@ -60,6 +60,10 @@ export function reviewProduct(id, approved) {
   return request.patch(`/admin/products/${id}/review`, { approved })
 }
 
+export function updateProductStatus(id, status) {
+  return request.put(`/products/admin/${id}/status`, { status })
+}
+
 // ===== 图片上传 =====
 
 export function uploadImage(file) {

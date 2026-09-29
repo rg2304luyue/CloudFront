@@ -118,6 +118,9 @@ async function fetchAddresses() {
   try {
     const r = await getAddressList()
     addresses.value = r.data || []
+  } catch {
+    // 拦截器已统一提示错误原因，此处静默处理避免重复 toast
+    addresses.value = []
   } finally {
     loading.value = false
   }

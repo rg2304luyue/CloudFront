@@ -122,7 +122,7 @@ async function save() {
 async function handleApply() {
   try {
     await applySeller()
-    ElMessage.success('申请已提交！')
+    ElMessage.success('申请已提交！审批通过后需重新登录才能使用卖家功能')
     applied.value = true
   } catch {
     // 错误已由 request.js 响应拦截器处理（显示错误消息）

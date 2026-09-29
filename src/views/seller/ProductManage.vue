@@ -7,7 +7,8 @@
       </el-button>
     </div>
 
-    <div class="card table-card">
+    <EmptyState v-if="!loading && loadFailed" description="商品加载失败，请检查网络后重试" show-action @action="fetchProducts()" action-text="重新加载" />
+    <div v-else class="card table-card">
       <el-table :data="products" style="width:100%" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="180" />
         <el-table-column label="主图" width="80">
@@ -46,7 +47,7 @@
         :page-size="size"
         :total="total"
         layout="prev, pager, next"
-        @current-change="fetchProducts"
+        @current-change="() => fetchProducts()"
       />
     </div>
   </div>
@@ -57,6 +58,7 @@ import { ref, onMounted } from 'vue'
 import { getMyProducts, deleteProduct } from '@/api/product'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePolling } from '@/composables/usePolling'
+import EmptyState from '@/components/EmptyState.vue'
 import PageHeader from '@/components/PageHeader.vue'
 
 const products = ref([])
@@ -64,22 +66,31 @@ const loading = ref(true)
 const page = ref(1)
 const size = ref(20)
 const total = ref(0)
+const loadFailed = ref(false)
 
 async function fetchProducts(silent = false) {
-  if (!silent) loading.value = true
+  if (!silent) {
+    loading.value = true
+    loadFailed.value = false
+  }
   try {
     const res = await getMyProducts({ page: page.value, size: size.value })
     products.value = res.data || []
     total.value = res.total || 0
-  } catch (e) {
-    if (!silent) throw e
+  } catch {
+    if (!silent) loadFailed.value = true
   } finally {
     if (!silent) loading.value = false
   }
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定删除「${row.name}」？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确定删除「${row.name}」？`, '提示', { type: 'warning' })
+  } catch {
+    // 用户取消删除，正常分支
+    return
+  }
   try {
     await deleteProduct(row.id)
     ElMessage.success('删除成功')

@@ -98,8 +98,13 @@ export function usePayment() {
       submitted = true
       releaseLockWhenWindowCloses(paymentKey, w)
     } catch (error) {
-      if (!['cancel', 'close'].includes(error)) {
-        ElMessage.error('获取支付信息失败')
+      if (['cancel', 'close'].includes(error)) {
+        // 用户取消，静默
+      } else if (error?.code || error?.response || error?.request) {
+        // 业务/HTTP/网络错误已由 request.js 拦截器提示具体原因，避免重复 toast
+      } else {
+        // 本地校验错误（支付表单/地址不受信任等），补充提示
+        ElMessage.error(error?.message || '获取支付信息失败')
       }
     } finally {
       if (!submitted && !w.closed) w.close()

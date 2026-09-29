@@ -21,7 +21,7 @@
           <span class="col-del"></span>
         </div>
 
-        <div v-for="item in cartStore.items" :key="item.productId" class="table-row">
+        <div v-for="item in cartStore.items" :key="item.productId" class="table-row" :class="{ 'is-invalid': item.status === 0 }">
           <div class="col-check">
             <el-checkbox :model-value="item.checked" :disabled="checkout.locked.value" @change="async (v) => { try { await cartStore.toggleCheck(item.productId, v) } catch { ElMessage.error('更新失败') } }" />
           </div>
@@ -34,24 +34,24 @@
             </div>
           </div>
           <div class="col-name" @click="$router.push(`/product/${item.productId}`)">
-            <p class="item-name">{{ item.name }}</p>
+            <p class="item-name">{{ item.name }}<span v-if="item.status === 0" class="invalid-tag">已失效</span></p>
           </div>
           <div class="col-price">
-            <span class="item-price">¥{{ item.price }}</span>
+            <span class="item-price">¥{{ formatAmount(item.price) }}</span>
           </div>
           <div class="col-qty">
             <el-input-number
               :model-value="item.quantity"
               :min="1"
-              :max="99"
+              :max="item.stock != null ? Math.max(1, Math.min(item.stock, 999)) : 99"
               size="small"
               controls-position="right"
-              :disabled="updatingQty.has(item.productId) || checkout.locked.value"
+              :disabled="updatingQty.has(item.productId) || checkout.locked.value || item.status === 0"
               @update:model-value="(v) => queueQuantityUpdate(item.productId, v)"
             />
           </div>
           <div class="col-total">
-            <span class="item-total">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
+            <span class="item-total">¥{{ formatAmount(item.price * item.quantity) }}</span>
           </div>
           <div class="col-del">
             <el-button link type="danger" :disabled="checkout.locked.value" @click="async () => { try { await cartStore.remove(item.productId) } catch { ElMessage.error('删除失败') } }">
@@ -71,7 +71,7 @@
           <span class="total-label">
             已选 <strong>{{ cartStore.checkedCount }}</strong> 件，合计
           </span>
-          <span class="total-price">¥{{ cartStore.totalPrice.toFixed(2) }}</span>
+          <span class="total-price">¥{{ formatAmount(cartStore.totalPrice) }}</span>
           <button class="btn btn-danger btn-lg" :disabled="!checkoutReady || cartStore.checkedCount === 0 || updatingQty.size > 0" @click="openCheckout">
             去结算
           </button>
@@ -102,7 +102,7 @@
             <div class="order-items-list">
               <div v-for="item in checkoutItems" :key="item.productId" class="order-item">
                 <span class="order-item-name">{{ item.name }} ×{{ item.quantity }}</span>
-                <span class="order-item-price">¥{{ (item.price * item.quantity).toFixed(2) }}</span>
+                <span class="order-item-price">¥{{ formatAmount(item.price * item.quantity) }}</span>
               </div>
             </div>
           </div>
@@ -114,7 +114,7 @@
 
           <div class="dialog-total">
             <span>合计</span>
-            <strong>¥{{ checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2) }}</strong>
+            <strong>¥{{ formatAmount(checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0)) }}</strong>
           </div>
         </div>
         <template #footer>
@@ -134,6 +134,7 @@ import { useCartStore } from '@/stores/cart'
 import { useUserStore } from '@/stores/user'
 import { useCheckoutRequest } from '@/composables/useCheckoutRequest'
 import { getAddressList } from '@/api/user'
+import { formatAmount } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import LoadingState from '@/components/LoadingState.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -161,8 +162,13 @@ const checkAll = computed({
   set: () => {}
 })
 const indeterminate = computed(() => cartStore.items.some(i => i.checked) && !checkAll.value)
-const checkedItems = computed(() => cartStore.items.filter(i => i.checked))
-const checkoutItems = computed(() => checkout.pending.value?.items || checkedItems.value)
+// 失效商品不计入勾选集合与合计，避免"看得见的下单内容"与后端取的勾选集合不一致
+const checkedItems = computed(() => cartStore.items.filter(i => i.checked && i.status !== 0))
+const checkoutItems = computed(() =>
+  checkout.pending.value?.submitted && checkout.pending.value.items
+    ? checkout.pending.value.items
+    : checkedItems.value
+)
 
 onMounted(async () => {
   try {
@@ -171,6 +177,7 @@ onMounted(async () => {
     if (checkout.locked.value) {
       selectedAddressId.value = checkout.pending.value.addressId
       remark.value = checkout.pending.value.remark
+      await loadAddresses()
       dialogVisible.value = true
     }
     await cartStore.fetchCart()
@@ -258,21 +265,46 @@ async function toggleAll(v) {
   }
 }
 
+async function loadAddresses() {
+  try {
+    const res = await getAddressList()
+    addresses.value = res.data || []
+    const savedAddressId = checkout.pending.value?.addressId
+    if (!addresses.value.some(a => a.id === selectedAddressId.value)) {
+      const defAddr = addresses.value.find(a => a.isDefault === 1)
+      selectedAddressId.value = defAddr ? defAddr.id : (addresses.value[0]?.id || null)
+      // 已提交请求里的原地址不存在了（如在他端被删除）：回退到未提交状态，
+      // 否则弹窗显示的是默认地址，而实际提交的是已失效的原地址。
+      if (savedAddressId != null && selectedAddressId.value !== savedAddressId && checkout.pending.value?.submitted) {
+        try {
+          checkout.save({ ...checkout.pending.value, submitted: false, addressId: selectedAddressId.value })
+        } catch {
+          // 回退失败时保持原状态，用户可在弹窗中看到仍以原地址提交
+        }
+        ElMessage.warning('原收货地址已不可用，请重新确认订单信息')
+      }
+    }
+  } catch {
+    // 拦截器已提示错误原因，此处静默处理避免重复 toast
+    addresses.value = []
+  }
+}
+
 async function openCheckout() {
   if (!checkoutReady.value || submitting.value || checkout.busy.value) return
+  // 以服务器最新勾选为准再弹窗，保证所见即所付
+  const cartOk = await cartStore.fetchCart()
+  if (!cartOk) {
+    // 拦截器已提示原因，此处静默返回避免重复 toast
+    return
+  }
   if (checkout.locked.value) {
+    await loadAddresses()
     dialogVisible.value = true
     await checkout.refresh()
     return
   }
-  try {
-    const res = await getAddressList()
-    addresses.value = res.data || []
-    const defAddr = addresses.value.find(a => a.isDefault === 1)
-    selectedAddressId.value = defAddr ? defAddr.id : (addresses.value[0]?.id || null)
-  } catch {
-    addresses.value = []
-  }
+  await loadAddresses()
   try {
     await checkout.prepare()
   } catch {
@@ -328,6 +360,14 @@ async function submitOrder() {
 }
 .table-row:last-child { border-bottom: none; }
 .table-row:hover { background: rgba(0,0,0,.02); }
+.table-row.is-invalid { opacity: .45; }
+.table-row.is-invalid:hover { background: none; }
+.invalid-tag {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
 
 .col-check { width: 44px; display: flex; align-items: center; }
 .col-img { width: 100px; cursor: pointer; }

@@ -73,7 +73,8 @@ async function handleLogin() {
     await userStore.fetchUserInfo()
     await cartStore.fetchCart()
     ElMessage.success('登录成功')
-    const target = route.query.redirect || '/home'
+    const redirect = route.query.redirect
+    const target = (typeof redirect === 'string' && redirect.startsWith('/')) ? redirect : '/home'
     router.push(target)
   } catch {
     // 错误已由 request.js 响应拦截器处理（显示错误消息）

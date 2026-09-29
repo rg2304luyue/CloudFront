@@ -35,7 +35,7 @@
         :page-size="size"
         :total="total"
         v-model:current-page="page"
-        @current-change="fetchData"
+        @current-change="() => fetchData()"
       />
     </div>
   </div>

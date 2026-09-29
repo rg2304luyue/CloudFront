@@ -25,7 +25,10 @@ export function useCheckoutRequest(userStore, onSuccess) {
     if (saved) {
       // Do not silently discard malformed recovery data and create another order.
       const value = JSON.parse(saved)
-      if (typeof value?.token !== 'string' || !value.token || typeof value.submitted !== 'boolean') throw new Error('下单恢复记录异常，请先在订单列表核实结果')
+      // items 缺失时不能用购物车当前勾选代替快照渲染，否则恢复的弹窗与实际提交内容不一致
+      if (typeof value?.token !== 'string' || !value.token
+          || typeof value.submitted !== 'boolean'
+          || !Array.isArray(value.items)) throw new Error('下单恢复记录异常，请先在订单列表核实结果')
       pending.value = value
     }
     if (pending.value?.submitted) await refresh()

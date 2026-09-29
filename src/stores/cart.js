@@ -9,19 +9,21 @@ export const useCartStore = defineStore('cart', () => {
   const items = ref([])
   const checkedCount = computed(() => items.value.filter(i => i.checked).length)
   const totalPrice = computed(() =>
-    Math.round(items.value.filter(i => i.checked).reduce((sum, i) => sum + i.price * i.quantity, 0) * 100) / 100
+    items.value.filter(i => i.checked).reduce((sum, i) => sum + Math.round((i.price ?? 0) * 100) * i.quantity, 0) / 100
   )
 
   async function fetchCart() {
     try {
       const res = await getCartList()
       items.value = res.data || []
+      return true
     } catch (e) {
       // Only clear on auth failure (401), preserve items on network errors
-      if (e?.response?.status === 401 || e?.message?.includes("401")) {
+      if (e?.response?.status === 401 || e?.code === 401) {
         items.value = []
       }
       // Other errors: keep existing items, let the interceptor show the error toast
+      return false
     }
   }
 

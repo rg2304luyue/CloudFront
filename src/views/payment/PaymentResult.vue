@@ -125,8 +125,14 @@ async function checkPayment() {
   } catch {
     // 网络错误不改变状态，继续轮询直到达到上限
     resultType.value = 'pending'
-    resultTitle.value = '支付处理中'
-    resultDesc.value = '请前往「我的订单」查看支付状态'
+    if (paymentConfirmed.value) {
+      // 款项已确认，保持"已确认"文案，不退化为"支付处理中"
+      resultTitle.value = '支付已确认，订单同步中'
+      resultDesc.value = '款项已确认，请勿重复支付。正在等待订单状态同步。'
+    } else {
+      resultTitle.value = '支付处理中'
+      resultDesc.value = '请前往「我的订单」查看支付状态'
+    }
   } finally {
     loading.value = false
     polling = false
