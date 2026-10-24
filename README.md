@@ -2,6 +2,28 @@
 
 Vue 3 + Vite + Element Plus + Pinia + Vue Router，配合 CloudBack 微服务后端。
 
+## 快速开始
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # 输出到 dist/
+npm run preview    # 预览构建产物（CloudBack/start-all.bat 最后也会执行它）
+```
+
+所有 `/api` 请求由 Vite dev server 代理到 CloudBack 网关（默认 `http://localhost:8080`，配置在 `vite.config.js`），联调前先按 `CloudBack/README.md` 把后端与中间件起起来，否则登录、购物车、订单、支付都会落到代理失败分支。
+
+测试（`package.json` 没有 `test` 脚本，需逐个文件运行）：
+
+```bash
+node tests/checkout-request.test.mjs
+node tests/payment-result.test.mjs
+```
+
+不要用 `node --test tests/`，当前 Node 版本会把目录当作文件而报错。测试通过 `node:vm` 直接执行组件和 composable 源码；`payment-result.test.mjs` 用正则提取 `PaymentResult.vue` 的 `<script setup>` 块，修改该文件时要保留不带属性的 `<script setup>` 标签。
+
+---
+
 ## 技术栈
 
 | 层级 | 技术 | 版本 |
@@ -112,7 +134,6 @@ logout()                                         // 清 token + 用户
 
 23 条路由记录：17 条 MainLayout 子路由 + `/login`、`/register`、`/403`、`/500`、`/:pathMatch(.*)*` 五条顶层路由 + `/` 重定向包装。`/login` 和 `/register` 为独立全屏页面，其余由 `MainLayout` 包裹。
 
-
 | 路径 | 页面 | 认证 | 角色限制 | 说明 |
 |---|---|---|---|---|
 | `/home` | Home.vue | 否 | — | Hero Banner + 热门商品 |
@@ -152,7 +173,6 @@ logout()                                         // 清 token + 用户
    从 Pinia userStore 读用户角色（默认 BUYER）
    若角色不在允许列表 → redirect: /403
 ```
-
 
 ---
 
@@ -213,7 +233,6 @@ AppHeader 退出按钮
 监听挂载于 App.vue onMounted，卸载时移除。
 ```
 
-
 ### localStorage 键
 
 | 键 | 值 |
@@ -243,7 +262,6 @@ AppHeader 退出按钮
 ```
 
 `handleUnauthorized()`：模块级 `handling401` 标志防止并发 401 重复清理与重复跳转（业务码 401 的 toast 仍会逐条弹出）；移除 token → 派发 `cloud-auth-expired` 事件（`App.vue` 监听后调用 `userStore.logout()`，同时清用户与购物车）→ 当前不在登录页时 `router.push({ name: 'Login', query: { redirect: 当前完整路径 } })`。这是路由跳转，不会整页刷新。
-
 
 ### 响应拦截器 — 错误
 
@@ -285,7 +303,6 @@ AppHeader 退出按钮
 |---|---|
 | `checkedCount` | 勾选商品的行数（items.filter(i => i.checked).length），**包含已下架商品**，失效过滤在 Cart.vue 内 |
 | `totalPrice` | 勾选商品合计，以分为单位累加（每条 `price` 先四舍五入到分），同样包含失效商品 |
-
 
 **Actions**：`fetchCart()`、`add()`、`updateQty()`、`toggleCheck()`、`checkAll()`、`remove()`、`clear()`、`reset()`
 
@@ -519,7 +536,6 @@ PageHeader → 标题"购物车" + 副标题"管理你的购物清单"
 响应式   → 768px 以下隐藏单价/小计列，底栏纵向排列
 ```
 
-
 ### 订单列表（OrderList.vue）
 
 ```
@@ -547,7 +563,6 @@ PageHeader 带返回按钮
 加载态 → HTTP 404 或业务码 3001（订单不存在/非本人订单）显示 EmptyState"订单不存在"，
         其他失败（网络、服务端错误）显示可重试的"重新加载"态
 ```
-
 
 ### 支付结果（PaymentResult.vue）
 
@@ -593,7 +608,6 @@ PageHeader 带返回按钮
 分页     → 后端返回真实 total，分页器可正确显示总页数；翻页事件用箭头包装，避免误传页码对象
 ```
 
-
 ### 商品表单（ProductForm.vue）
 
 ```
@@ -608,7 +622,6 @@ PageHeader 带返回按钮
 路由复用于添加(/add)和编辑(/:id/edit)
 ```
 
-
 ### 分类管理（CategoryManage.vue）
 
 ```
@@ -616,7 +629,6 @@ PageHeader 带返回按钮
 操作 → 添加(选父分类 + 名称 + 排序) | 编辑 | 删除(有子分类不可删)
 成环保护 → 编辑时的父分类选项会排除自身及其全部后代，展平列表按 id 去重
 ```
-
 
 ### 用户管理（UserList.vue）
 
@@ -636,7 +648,6 @@ PageHeader 带返回按钮
 分页 → el-pagination 翻页事件已修正，不再把页码对象当作页码传入
 ```
 
-
 ### 卖家订单管理（SellerOrderManage.vue）
 
 ```
@@ -647,7 +658,6 @@ PageHeader 带返回按钮
 加载态 → 初次加载失败显示"重新加载"，不显示空列表
 分页 → el-pagination
 ```
-
 
 ### 失败消息（OutboxManage.vue）
 
@@ -708,7 +718,6 @@ isPaying(orderNo)
   // 因此支付宝窗口打开期间，订单列表按钮也会显示"正在准备…"并禁用
 ```
 
-
 支付表单只允许提交到 `openapi.alipay.com` 或 `openapi-sandbox.dl.alipaydev.com` 的 `/gateway.do`，且必须是 POST。
 
 ### useCheckoutRequest.js（`composables/useCheckoutRequest.js`）
@@ -753,29 +762,6 @@ export function formatAmount(v)
 
 ---
 
-
-## 近期更新（2026-09-29）
-
-| 类别 | 变更 | 涉及文件 |
-|------|------|----------|
-| 失效商品 | 购物车失效商品置灰并标记"已失效"，结算弹窗与提交内容都不含失效商品，数量上限改为 `max(1, min(stock, 999))` | `views/cart/Cart.vue` |
-| 结算一致性 | 弹窗展示内容与实际提交快照一致；打开弹窗前强制刷新购物车 | `views/cart/Cart.vue`、`composables/useCheckoutRequest.js` |
-| 多标签页 | storage 事件同步登录态：他页登出带 redirect 跳登录，换号后重置本地购物车并重拉用户信息 | `App.vue` |
-| 登录态 | 已登录访问 `/login`、`/register` 直接跳 `/home`；登录 redirect 只接受以 `/` 开头的路径 | `router/index.js`、`views/Login.vue` |
-| ADMIN 上下架 | 新增 `updateProductStatus`，商品表单内 ADMIN 改状态时调用新接口 | `api/product.js`、`views/seller/ProductForm.vue` |
-| 金额与分页 | 新增 `formatAmount` 统一金额显示；修复 3 处 `@current-change` 误传页码对象；4 处补加载失败重试态 | `utils/format.js`、`views/**` |
-| 其它 | 401 并发防重入、支付错误提示去重、分类树成环保护、订单详情区分"不存在"与"加载失败" | `utils/request.js`、`composables/usePayment.js`、`views/seller/CategoryManage.vue`、`views/order/OrderDetail.vue` |
-| 清理 | 删除未被引用的 `usePagination.js` | `composables/` |
-
-## 近期更新（2026-09）
-
-| 类别 | 变更 | 涉及文件 |
-|------|------|----------|
-| 下单请求恢复 | 新增 `useCheckoutRequest`：令牌与原参数先落 sessionStorage，结果未知时只查询原请求，明确失败才换令牌 | `composables/useCheckoutRequest.js`、`views/cart/Cart.vue`、`api/order.js`、`utils/request.js` |
-| 视觉重设计 | Apple 风格设计令牌与公共类，Element Plus 覆盖改为 `html` 前缀，清理旧配色与失效样式，错误页样式合并 | `assets/*.css`、全部组件与页面的 `<style>` |
-| 测试 | 新增下单请求恢复与支付结果页的 Node 测试 | `tests/*.test.mjs` |
-
-
 ## 近期更新（2026-06-04）
 
 ### 架构增强
@@ -810,6 +796,27 @@ export function formatAmount(v)
 | 用户信息保存按钮添加 loading + disabled 状态 | `views/user/UserInfo.vue` |
 | 订单状态新增 `ORDER_STATUS` 命名常量 | `constants/orderStatus.js` |
 
+## 近期更新（2026-09）
+
+| 类别 | 变更 | 涉及文件 |
+|------|------|----------|
+| 下单请求恢复 | 新增 `useCheckoutRequest`：令牌与原参数先落 sessionStorage，结果未知时只查询原请求，明确失败才换令牌 | `composables/useCheckoutRequest.js`、`views/cart/Cart.vue`、`api/order.js`、`utils/request.js` |
+| 视觉重设计 | Apple 风格设计令牌与公共类，Element Plus 覆盖改为 `html` 前缀，清理旧配色与失效样式，错误页样式合并 | `assets/*.css`、全部组件与页面的 `<style>` |
+| 测试 | 新增下单请求恢复与支付结果页的 Node 测试 | `tests/*.test.mjs` |
+
+## 近期更新（2026-09-29）
+
+| 类别 | 变更 | 涉及文件 |
+|------|------|----------|
+| 失效商品 | 购物车失效商品置灰并标记"已失效"，结算弹窗与提交内容都不含失效商品，数量上限改为 `max(1, min(stock, 999))` | `views/cart/Cart.vue` |
+| 结算一致性 | 弹窗展示内容与实际提交快照一致；打开弹窗前强制刷新购物车 | `views/cart/Cart.vue`、`composables/useCheckoutRequest.js` |
+| 多标签页 | storage 事件同步登录态：他页登出带 redirect 跳登录，换号后重置本地购物车并重拉用户信息 | `App.vue` |
+| 登录态 | 已登录访问 `/login`、`/register` 直接跳 `/home`；登录 redirect 只接受以 `/` 开头的路径 | `router/index.js`、`views/Login.vue` |
+| ADMIN 上下架 | 新增 `updateProductStatus`，商品表单内 ADMIN 改状态时调用新接口 | `api/product.js`、`views/seller/ProductForm.vue` |
+| 金额与分页 | 新增 `formatAmount` 统一金额显示；修复 3 处 `@current-change` 误传页码对象；4 处补加载失败重试态 | `utils/format.js`、`views/**` |
+| 其它 | 401 并发防重入、支付错误提示去重、分类树成环保护、订单详情区分"不存在"与"加载失败" | `utils/request.js`、`composables/usePayment.js`、`views/seller/CategoryManage.vue`、`views/order/OrderDetail.vue` |
+| 清理 | 删除未被引用的 `usePagination.js` | `composables/` |
+
 ---
 
 ## 2026-07 Reliability Update
@@ -828,29 +835,6 @@ export function formatAmount(v)
 - Product cards use a stable image aspect ratio and support keyboard activation with `Enter` and `Space`.
 - The checkout dialog uses `min(560px, calc(100vw - 32px))` and no longer relies on absolute centering overrides.
 
-### Local verification
-
-```bash
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # 输出到 dist/
-npm run preview    # 预览构建产物（CloudBack/start-all.bat 最后也会执行它）
-
-# 测试：package.json 没有 test 脚本，需要逐个文件运行
-node tests/checkout-request.test.mjs
-node tests/payment-result.test.mjs
-```
-
-不要用 `node --test tests/`，当前 Node 版本会把目录当作文件而报错。测试通过 `node:vm` 直接执行组件和 composable 源码；`payment-result.test.mjs` 用正则提取 `PaymentResult.vue` 的 `<script setup>` 块，修改该文件时要保留不带属性的 `<script setup>` 标签。
-
-`npm run dev` serves the client on the Vite local URL (normally `http://localhost:5173/`). The development proxy still expects the CloudBack gateway at `/api`; start the backend and its configured middleware before testing login, cart, orders, or payment.
-
 ### Payment recovery note
 
 The browser return page is only one confirmation path. If the return is interrupted, do not repeatedly submit the Alipay form. Open the order list or payment-result route again after the payment service has recovered; CloudBack now performs server-side reconciliation for recent pending records as well.
-
-### Clarifications for earlier sections
-
-- `cloud_user` is a local cache only. The token is verified by fetching `/api/users/me` on the first navigation guard run, not during app startup (see 启动恢复).
-- `cartStore.fetchCart()` clears items on authentication failure only. It preserves existing cart data for transient network or server failures.
-- `usePolling` waits for a poll request to settle before scheduling the next `setTimeout`; it is not a raw `setInterval` loop.
