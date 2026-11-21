@@ -55,7 +55,9 @@ export function useCheckoutRequest(userStore, onSuccess) {
     const result = await getOrderToken()
     if (!active()) return
     if (typeof result.data !== 'string' || !result.data) throw new Error('下单令牌无效，请稍后重试')
-    save({ token: result.data, submitted: false })
+    // items 必须一起落盘：initialize() 会把缺少 items 的记录判定为损坏并抛错，
+    // 只写 {token, submitted} 会让"打开结算弹窗后离开页面"再也回不来。
+    save({ token: result.data, submitted: false, items: [] })
     status.value = 'READY'
   }
 
@@ -94,7 +96,7 @@ export function useCheckoutRequest(userStore, onSuccess) {
         // The status endpoint only reports READY after acquiring the request row.
         // Therefore no preparation or stock operation is still in flight and the
         // user can safely correct the checkout data while retaining the same token.
-        save({ token: pending.value.token, submitted: false })
+        save({ token: pending.value.token, submitted: false, items: [] })
         message.value = '本次请求尚未扣减库存，请修正信息后使用原请求重新提交。'
         return
       }
@@ -130,7 +132,7 @@ export function useCheckoutRequest(userStore, onSuccess) {
       if (active()) {
         if (error.code === 42201) {
           // Server explicitly rejected validation before any stock operation.
-          save({ token: pending.value.token, submitted: false })
+          save({ token: pending.value.token, submitted: false, items: [] })
           status.value = 'READY'
           message.value = error.message || '请修正下单信息后重试'
           return
@@ -144,5 +146,6 @@ export function useCheckoutRequest(userStore, onSuccess) {
   }
 
   onBeforeUnmount(() => { disposed = true; stop() })
-  return { pending, status, message, busy, locked, initialize, prepare, submit, refresh }
+  // save 必须导出：Cart.vue 在"原收货地址失效"时用它把请求回退为未提交状态
+  return { pending, status, message, busy, locked, initialize, prepare, submit, refresh, save }
 }

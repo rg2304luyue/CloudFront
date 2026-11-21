@@ -30,6 +30,29 @@ function fixture({ saved, query = async () => ({ data: { status: 'PROCESSING' } 
 }
 const saved = { token: 'original', submitted: true, addressId: '5', remark: 'original note', items: [{ productId: '8', quantity: 2 }] }
 
+test('prepare snapshot survives a remount (items present, no malformed-record lockout)', async () => {
+  // 打开结算弹窗后离开页面 = 重新 initialize 同一份 sessionStorage，不能判定为损坏
+  const f = fixture()
+  await f.state.initialize()
+  await f.state.prepare()
+  const stored = JSON.parse(f.data.get('cloud-checkout:1'))
+  assert.equal(stored.submitted, false)
+  assert.ok(Array.isArray(stored.items), 'prepare 落盘的快照必须带 items 数组')
+
+  const again = fixture({ saved: stored })
+  await again.state.initialize()
+  assert.equal(again.state.locked.value, false)
+})
+
+test('save is exported for the address-fallback path in Cart.vue', async () => {
+  const f = fixture({ saved, query: async () => ({ data: { status: 'READY' } }) })
+  assert.equal(typeof f.state.save, 'function')
+  await f.state.initialize()
+  f.state.save({ ...saved, submitted: false, addressId: '9' })
+  assert.equal(f.state.locked.value, false)
+  assert.equal(JSON.parse(f.data.get('cloud-checkout:1')).addressId, '9')
+})
+
 test('successful checkout persists before POST and preserves string order ID', async () => {
   const f = fixture()
   await f.state.initialize()

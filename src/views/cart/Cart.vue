@@ -180,11 +180,16 @@ onMounted(async () => {
       await loadAddresses()
       dialogVisible.value = true
     }
-    await cartStore.fetchCart()
   } catch (error) {
+    // 恢复记录异常时仍要加载购物车，否则页面会误显示"购物车是空的"并永久禁用结算
     ElMessage.error(error.message || '加载失败，请刷新重试')
   } finally {
     loading.value = false
+  }
+  try {
+    await cartStore.fetchCart()
+  } catch {
+    // 拦截器已提示错误原因，此处静默处理避免重复 toast
   }
 
   // 处理"立即购买"逻辑：只勾选指定商品
