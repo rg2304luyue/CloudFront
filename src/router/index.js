@@ -72,6 +72,9 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
+// 用户资料加载只重试一次，避免导航守卫里反复请求同一失败接口
+let profileLoadFailed = false
+
 router.beforeEach(async (to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - CloudMall` : 'CloudMall'
 
@@ -93,17 +96,19 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 登录状态下如果 userInfo 尚未加载，先等待加载完成
-  if (isLoggedIn() && !userStore.userInfo) {
+  // 登录状态下如果 userInfo 尚未加载，先等待加载完成。
+  // 注意：失败时【不能】重定向到 /500 —— /500 再进守卫时 token 仍在、userInfo 仍为空，
+  // 会再次失败并再次跳 /500，形成无限重定向（vue-router 的环检测只在 dev 构建里）。
+  // 这里标记一次失败后放行，由页面自身展示错误态，用户仍有"重新登录/刷新"的出路。
+  if (isLoggedIn() && !userStore.userInfo && !profileLoadFailed) {
     try {
       await userStore.fetchUserInfo()
     } catch {
       if (!isLoggedIn()) {
         next({ name: 'Login', query: { redirect: to.fullPath } })
-      } else {
-        next({ name: 'ServerError' })
+        return
       }
-      return
+      profileLoadFailed = true
     }
   }
 

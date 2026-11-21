@@ -48,7 +48,7 @@ CloudFront/
 ├── package.json
 ├── auto-imports.d.ts / components.d.ts  # 按需引入插件生成的类型声明
 ├── tests/                               # Node 原生测试（node:test + node:vm）
-│   ├── checkout-request.test.mjs        #   下单请求恢复状态机（10 项）
+│   ├── checkout-request.test.mjs        #   下单请求恢复状态机（12 项）
 │   └── payment-result.test.mjs          #   支付结果页轮询与判定（5 项）
 └── src/
     ├── main.js                          # 入口：注册 Vue/Pinia/Router/ElementPlus/图标；显式导入命令式服务 CSS（MessageBox/Message/Notification）
@@ -167,7 +167,8 @@ logout()                                         // 清 token + 用户
 3. 已登录却访问 /login、/register → next('/home')（反向拦截）
 4. 若 to.meta.requireAuth && !isLoggedIn()
    → redirect: /login?redirect=<原路径>
-5. 已登录且 userInfo 未加载 → await fetchUserInfo()（失败时未登录跳 /login，否则跳 /500）
+5. 已登录且 userInfo 未加载 → await fetchUserInfo()；失败时 token 已失效则跳 /login，
+   否则记一次失败标记后放行（**不能**跳 /500：/500 再进守卫会再次失败，形成无限重定向）
    —— 登录态的最终恢复发生在这里，不在 App.vue
 6. 若 to.meta.roles 存在
    从 Pinia userStore 读用户角色（默认 BUYER）
@@ -738,6 +739,10 @@ const checkout = useCheckoutRequest(userStore, async orderId => { /* 跳转订�
   - SUCCEEDED → 清除记录并以订单 id 调用第二个参数（成功回调）；FAILED / EXPIRED → 清除记录，下次结算时获取新令牌。
 - **安全处理**：每次处理结果前确认用户没有切换、页面没有卸载；`sessionStorage` 记录格式不合法时 `initialize()` 抛错，Cart 页面提示错误，结算按钮保持禁用，不会丢弃记录，也不会换令牌下单。
 - **页面恢复**：刷新或重新进入购物车时，`initialize()` 读取记录并刷新请求状态；如果仍处于锁定状态，由 Cart 页面带回原地址和备注、重新打开结算弹窗，并跳过"立即购买"的自动勾选。
+- **快照形状**：`prepare()` 与各条"回退到未提交"的分支都会写入完整记录（含 `items: []`），
+  否则 `initialize()` 会把记录判为损坏并永久禁用结算。
+- **降级**：恢复记录异常时 Cart 仍会加载购物车（不再误显示空购物车），`save()` 已导出以便
+  "原收货地址失效"时把请求回退为未提交状态。
 
 ### usePolling.js（`composables/usePolling.js`）
 
